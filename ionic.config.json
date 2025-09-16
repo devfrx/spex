@@ -1,0 +1,7 @@
+{
+  "name": "spex",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "vue-vite"
+}

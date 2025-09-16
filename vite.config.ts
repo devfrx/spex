@@ -13,7 +13,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
-  server: {
+  /* server: {
     proxy: {
       "/api": {
         target: "http://localhost:3001",
@@ -21,7 +21,7 @@ export default defineConfig({
         rewrite: (path) => path.replace(/^\/api/, ""),
       },
     },
-  },
+  }, */
   test: {
     globals: true,
     environment: "jsdom",

@@ -4,9 +4,8 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "npm run dev:backend & vite",
-    "dev:frontend": "vite",
-    "dev:backend": "cd backend && npm run dev",
+    "dev": "vite",
+    "dev:frontend": "vite", 
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "test:e2e": "cypress run",
@@ -22,9 +21,11 @@
     "@iconify/vue": "^3.2.1",
     "@ionic/vue": "^8.0.0",
     "@ionic/vue-router": "^8.0.0",
+    "@sparticuz/chromium": "^138.0.2",
     "ionicons": "^7.0.0",
     "pinia": "^3.0.3",
     "pinia-plugin-persistedstate": "^4.5.0",
+    "puppeteer-core": "^24.21.0",
     "vue": "^3.3.0",
     "vue-router": "^4.2.0"
   },

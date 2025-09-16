@@ -281,25 +281,34 @@
 
     const previewComponent = computed<Component>(() => {
         // Se il componente non è ancora caricato, creiamo un oggetto di preview di fallback
-        const base = component.value ?? {
+        const fallbackCategory =
+            editForm.value.category ||
+            (allCategories[0] as ComponentCategory);
+
+        const base: Component = component.value ?? {
             id: 'preview',
-            category: allCategories[0] as ComponentCategory,
+            category: fallbackCategory,
+            title: componentsStore.getCategoryDisplayName(fallbackCategory),
             model: editForm.value.model || 'Nome modello',
             price: editForm.value.price || 0,
-            specifications: [],
+            specifications: [] as string[],
             amazonUrl: editForm.value.amazonUrl || '',
-            imageUrl: editForm.value.imageUrl || ''
-        } as Component;
+            imageUrl: editForm.value.imageUrl || '',
+            createdAt: new Date(),
+            updatedAt: new Date(),
+        };
 
         return {
             ...base,
-            category: editForm.value.category,
-            model: editForm.value.model || 'Nome modello',
+            category: editForm.value.category || base.category,
+            title: componentsStore.getCategoryDisplayName(editForm.value.category || base.category),
+            model: editForm.value.model || base.model,
             price: editForm.value.price || 0,
             specifications: previewSpecs.value,
-            amazonUrl: editForm.value.amazonUrl,
-            imageUrl: editForm.value.imageUrl,
-        } as Component;
+            amazonUrl: editForm.value.amazonUrl || undefined,
+            imageUrl: editForm.value.imageUrl || undefined,
+            updatedAt: new Date(),
+        };
     });
 
     const hasChanges = computed(() => {

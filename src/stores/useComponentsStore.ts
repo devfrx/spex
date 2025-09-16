@@ -28,13 +28,27 @@ export const useComponentsStore = defineStore("components", {
       this.error = null;
 
       try {
-        // Simulazione API call - in produzione useresti un service reale
-        // Per ora restituiamo dati mock basati sull'URL
-        const mockData = this.getMockAmazonData(url);
-        return mockData;
+        // Chiamata al backend invece del mock
+        const response = await fetch("/api/amazon/product", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ url }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Errore nel recupero dati Amazon");
+        }
+
+        const productInfo = await response.json();
+        return productInfo;
       } catch (error) {
+        console.error("Errore fetching Amazon:", error);
         this.error = "Errore nel recupero delle informazioni da Amazon";
-        throw error;
+
+        // Fallback al mock in caso di errore
+        return this.getMockAmazonData(url);
       } finally {
         this.loading = false;
       }

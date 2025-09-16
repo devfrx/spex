@@ -4,7 +4,9 @@
   "version": "0.0.1",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "npm run dev:backend & vite",
+    "dev:frontend": "vite",
+    "dev:backend": "cd backend && npm run dev",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "test:e2e": "cypress run",

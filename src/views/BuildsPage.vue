@@ -73,52 +73,32 @@
                 </div>
 
                 <!-- Create Build Modal -->
-                <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
-                    <div class="modal-content" @click.stop>
-                        <header class="modal-header">
-                            <h2>Nuova Build PC</h2>
-                            <button @click="closeCreateModal" class="close-btn">
-                                <Icon icon="mdi:close" />
-                            </button>
-                        </header>
-
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label>Nome Build</label>
-                                <input v-model="newBuildName" placeholder="es. Gaming Build RTX 5070" class="form-input"
-                                    @keyup.enter="confirmCreateBuild" />
-                            </div>
-
-                            <div class="form-group">
-                                <label>Descrizione (opzionale)</label>
-                                <textarea v-model="newBuildDescription"
-                                    placeholder="Descrivi la tua build personalizzata..." class="form-textarea"
-                                    rows="3" />
-                            </div>
-
-                            <div class="build-templates">
-                                <label>Template Rapidi</label>
-                                <div class="templates-grid">
-                                    <button v-for="template in buildTemplates" :key="template.name"
-                                        @click="applyTemplate(template)" class="template-btn">
-                                        <Icon :icon="template.icon" class="template-icon" />
-                                        <span>{{ template.name }}</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-
-                        <footer class="modal-footer">
-                            <button @click="closeCreateModal" class="cancel-btn">
-                                Annulla
-                            </button>
-                            <button @click="confirmCreateBuild" :disabled="!newBuildName.trim()" class="confirm-btn">
-                                <Icon icon="mdi:check" />
-                                Crea Build
-                            </button>
-                        </footer>
+                <BaseModal v-model="showCreateModal" title="Nuova Build PC" icon="mdi:desktop-tower-monitor" size="md"
+                    :confirm-disabled="!newBuildName.trim()" confirm-text="Crea Build" @confirm="confirmCreateBuild"
+                    @cancel="closeCreateModal">
+                    <div class="form-group">
+                        <label>Nome Build</label>
+                        <input v-model="newBuildName" placeholder="es. Gaming Build RTX 5070" class="form-input"
+                            @keyup.enter="confirmCreateBuild" />
                     </div>
-                </div>
+
+                    <div class="form-group">
+                        <label>Descrizione (opzionale)</label>
+                        <textarea v-model="newBuildDescription" placeholder="Descrivi la tua build personalizzata..."
+                            class="form-textarea" rows="3" />
+                    </div>
+
+                    <div class="build-templates">
+                        <label>Template Rapidi</label>
+                        <div class="templates-grid">
+                            <button v-for="template in buildTemplates" :key="template.name"
+                                @click="applyTemplate(template)" class="template-btn">
+                                <Icon :icon="template.icon" class="template-icon" />
+                                <span>{{ template.name }}</span>
+                            </button>
+                        </div>
+                    </div>
+                </BaseModal>
             </div>
         </ion-content>
     </ion-page>
@@ -131,6 +111,7 @@
     import { useBuildsStore } from '@/stores/useBuildsStore';
     import { PCBuild } from '@/interfaces/builds';
     import BuildCard from '@/components/BuildCard.vue';
+    import BaseModal from '@/components/BaseModal.vue';
 
     const router = useRouter();
     const buildsStore = useBuildsStore();
@@ -499,79 +480,11 @@
     }
 
     /* Modal */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: var(--space-4);
-    }
-
-    .modal-content {
-        background: var(--color-surface-dark);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-xl);
-        width: 100%;
-        max-width: 500px;
-        max-height: 90vh;
-        overflow-y: auto;
-        backdrop-filter: blur(20px);
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--space-6);
-        border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.1);
-    }
-
-    .modal-header h2 {
-        margin: 0;
-        font-size: var(--font-size-xl);
-        font-weight: var(--font-weight-semibold);
-        color: var(--color-text-dark);
-    }
-
-    .close-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border: none;
-        border-radius: var(--radius-md);
-        color: var(--color-text-dark);
-        cursor: pointer;
-        transition: var(--transition-all);
-    }
-
-    .close-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.2);
-        color: var(--color-primary);
-    }
-
-    .modal-body {
-        padding: var(--space-6);
-    }
-
     .form-group {
-        margin-bottom: var(--space-4);
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: var(--space-2);
-        font-weight: var(--font-weight-medium);
-        font-size: var(--font-size-sm);
-        color: var(--color-text-dark);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+        margin-bottom: var(--space-6);
     }
 
     .form-input,
@@ -637,54 +550,6 @@
         color: var(--color-primary);
     }
 
-    .modal-footer {
-        display: flex;
-        gap: var(--space-3);
-        padding: var(--space-6);
-        border-top: 1px solid rgba(var(--color-primary-rgb), 0.1);
-        justify-content: flex-end;
-    }
-
-    .cancel-btn,
-    .confirm-btn {
-        padding: var(--space-3) var(--space-4);
-        border-radius: var(--radius-md);
-        font-weight: var(--font-weight-medium);
-        cursor: pointer;
-        transition: var(--transition-all);
-        font-size: var(--font-size-sm);
-    }
-
-    .cancel-btn {
-        background: rgba(var(--color-secondary-rgb), 0.1);
-        border: 1px solid rgba(var(--color-secondary-rgb), 0.3);
-        color: var(--color-text-muted);
-    }
-
-    .cancel-btn:hover {
-        background: rgba(var(--color-secondary-rgb), 0.2);
-        color: var(--color-text-dark);
-    }
-
-    .confirm-btn {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        background: var(--color-primary);
-        border: 1px solid var(--color-primary);
-        color: var(--color-white);
-    }
-
-    .confirm-btn:hover:not(:disabled) {
-        background: var(--color-primary-light);
-        border-color: var(--color-primary-light);
-    }
-
-    .confirm-btn:disabled {
-        opacity: var(--opacity-50);
-        cursor: not-allowed;
-    }
-
     /* Responsive */
     @media (max-width: 768px) {
         .stats-container {
@@ -705,9 +570,5 @@
         }
     }
 
-    @media (max-width: 480px) {
-        .modal-overlay {
-            padding: var(--space-2);
-        }
-    }
+    @media (max-width: 480px) {}
 </style>

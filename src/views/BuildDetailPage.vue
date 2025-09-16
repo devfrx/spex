@@ -156,72 +156,52 @@
                 </div>
 
                 <!-- Add Component Modal -->
-                <div v-if="showAddComponentModal" class="modal-overlay" @click="closeAddModal">
-                    <div class="modal-content" @click.stop>
-                        <header class="modal-header">
-                            <h2>Aggiungi Componente</h2>
-                            <button @click="closeAddModal" class="close-btn">
-                                <Icon icon="mdi:close" />
+                <BaseModal v-model="showAddComponentModal" title="Aggiungi Componente" icon="mdi:package-variant-plus"
+                    size="md" :confirm-disabled="!selectedCategory || !amazonUrl || !productInfo"
+                    :loading="componentsStore.loading" confirm-text="Aggiungi Componente" @confirm="confirmAddComponent"
+                    @cancel="closeAddModal">
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select v-model="selectedCategory" class="form-select">
+                            <option value="">Seleziona categoria</option>
+                            <option v-for="category in allCategories" :key="category" :value="category">
+                                {{ getCategoryName(category) }}
+                            </option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Link Amazon</label>
+                        <div class="url-input-group">
+                            <input v-model="amazonUrl" placeholder="https://amzn.eu/d/..." class="form-input"
+                                @blur="fetchProductInfo" />
+                            <button v-if="amazonUrl" @click="fetchProductInfo" :disabled="componentsStore.loading"
+                                class="fetch-btn">
+                                <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
+                                    :class="{ 'spin': componentsStore.loading }" />
                             </button>
-                        </header>
+                        </div>
+                    </div>
 
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label>Categoria</label>
-                                <select v-model="selectedCategory" class="form-select">
-                                    <option value="">Seleziona categoria</option>
-                                    <option v-for="category in allCategories" :key="category" :value="category">
-                                        {{ getCategoryName(category) }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Link Amazon</label>
-                                <div class="url-input-group">
-                                    <input v-model="amazonUrl" placeholder="https://amzn.eu/d/..." class="form-input"
-                                        @blur="fetchProductInfo" />
-                                    <button v-if="amazonUrl" @click="fetchProductInfo"
-                                        :disabled="componentsStore.loading" class="fetch-btn">
-                                        <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
-                                            :class="{ 'spin': componentsStore.loading }" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div v-if="productInfo" class="product-preview">
-                                <div class="preview-header">
-                                    <Icon icon="mdi:eye" />
-                                    <span>Anteprima Prodotto</span>
-                                </div>
-                                <div class="preview-content">
-                                    <p><strong>Nome:</strong> {{ productInfo.title }}</p>
-                                    <p><strong>Prezzo:</strong> €{{ productInfo.price.toFixed(2) }}</p>
-                                    <div v-if="productInfo.specifications?.length">
-                                        <strong>Specifiche:</strong>
-                                        <div class="specs-preview">
-                                            <span v-for="spec in productInfo.specifications" :key="spec"
-                                                class="spec-tag">
-                                                {{ spec }}
-                                            </span>
-                                        </div>
-                                    </div>
+                    <div v-if="productInfo" class="product-preview">
+                        <div class="preview-header">
+                            <Icon icon="mdi:eye" />
+                            <span>Anteprima Prodotto</span>
+                        </div>
+                        <div class="preview-content">
+                            <p><strong>Nome:</strong> {{ productInfo.title }}</p>
+                            <p><strong>Prezzo:</strong> €{{ productInfo.price.toFixed(2) }}</p>
+                            <div v-if="productInfo.specifications?.length">
+                                <strong>Specifiche:</strong>
+                                <div class="specs-preview">
+                                    <span v-for="spec in productInfo.specifications" :key="spec" class="spec-tag">
+                                        {{ spec }}
+                                    </span>
                                 </div>
                             </div>
                         </div>
-
-                        <footer class="modal-footer">
-                            <button @click="closeAddModal" class="cancel-btn">
-                                Annulla
-                            </button>
-                            <button @click="confirmAddComponent"
-                                :disabled="!selectedCategory || !amazonUrl || !productInfo" class="confirm-btn">
-                                <Icon icon="mdi:check" />
-                                Aggiungi Componente
-                            </button>
-                        </footer>
                     </div>
-                </div>
+                </BaseModal>
             </div>
         </ion-content>
     </ion-page>
@@ -234,6 +214,7 @@
     import { useBuildsStore } from '@/stores/useBuildsStore';
     import { useComponentsStore } from '@/stores/useComponentsStore';
     import { ComponentCategory, AmazonProductInfo, Component } from '@/interfaces/builds';
+    import BaseModal from '@/components/BaseModal.vue';
 
     const route = useRoute();
     const router = useRouter();
@@ -812,69 +793,6 @@
     }
 
     /* Modal */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-        padding: var(--space-4);
-    }
-
-    .modal-content {
-        background: var(--color-surface-dark);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-xl);
-        width: 100%;
-        max-width: 500px;
-        max-height: 90vh;
-        overflow-y: auto;
-        backdrop-filter: blur(20px);
-    }
-
-    .modal-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--space-6);
-        border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.1);
-    }
-
-    .modal-header h2 {
-        margin: 0;
-        font-size: var(--font-size-xl);
-        font-weight: var(--font-weight-semibold);
-        color: var(--color-text-dark);
-    }
-
-    .close-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border: none;
-        border-radius: var(--radius-md);
-        color: var(--color-text-dark);
-        cursor: pointer;
-        transition: var(--transition-all);
-    }
-
-    .close-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.2);
-        color: var(--color-primary);
-    }
-
-    .modal-body {
-        padding: var(--space-6);
-    }
-
     .form-group {
         margin-bottom: var(--space-4);
     }

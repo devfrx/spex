@@ -93,99 +93,79 @@
                 </div>
 
                 <!-- Create Component Modal -->
-                <div v-if="showCreateModal" class="modal-overlay" @click="closeCreateModal">
-                    <div class="modal-content" @click.stop>
-                        <header class="modal-header">
-                            <h2>Nuovo Componente</h2>
-                            <button @click="closeCreateModal" class="close-btn">
-                                <Icon icon="mdi:close" />
-                            </button>
-                        </header>
+                <BaseModal v-model="showCreateModal" title="Nuovo Componente" icon="mdi:package-variant-plus" size="md"
+                    :confirm-disabled="!canCreateComponent" :loading="componentsStore.loading"
+                    confirm-text="Crea Componente" @confirm="confirmCreateComponent" @cancel="closeCreateModal">
+                    <div class="form-group">
+                        <label>Categoria</label>
+                        <select v-model="newComponent.category" class="form-select">
+                            <option value="">Seleziona categoria</option>
+                            <option v-for="category in allCategories" :key="category" :value="category">
+                                {{ getCategoryName(category) }}
+                            </option>
+                        </select>
+                    </div>
 
-                        <div class="modal-body">
-                            <div class="form-group">
-                                <label>Categoria</label>
-                                <select v-model="newComponent.category" class="form-select">
-                                    <option value="">Seleziona categoria</option>
-                                    <option v-for="category in allCategories" :key="category" :value="category">
-                                        {{ getCategoryName(category) }}
-                                    </option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
-                                <label>Link Amazon (opzionale)</label>
-                                <div class="url-input-group">
-                                    <input v-model="newComponent.amazonUrl" placeholder="https://amzn.eu/d/..."
-                                        class="form-input" @blur="fetchProductInfo" />
-                                    <button v-if="newComponent.amazonUrl" @click="fetchProductInfo"
-                                        :disabled="componentsStore.loading" class="fetch-btn">
-                                        <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
-                                            :class="{ 'spin': componentsStore.loading }" />
-                                    </button>
-                                </div>
-                            </div>
-
-                            <div v-if="productPreview" class="product-preview">
-                                <div class="preview-header">
-                                    <Icon icon="mdi:eye" />
-                                    <span>Anteprima Prodotto</span>
-                                </div>
-                                <div class="preview-content">
-                                    <p><strong>Nome:</strong> {{ productPreview.title }}</p>
-                                    <p><strong>Prezzo:</strong> €{{ productPreview.price.toFixed(2) }}</p>
-                                    <div v-if="productPreview.specifications?.length">
-                                        <strong>Specifiche:</strong>
-                                        <div class="specs-preview">
-                                            <span v-for="spec in productPreview.specifications" :key="spec"
-                                                class="spec-tag">
-                                                {{ spec }}
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Manual Input Fields -->
-                            <div v-if="!productPreview || showManualFields" class="manual-fields">
-                                <div class="form-group">
-                                    <label>Nome Modello</label>
-                                    <input v-model="newComponent.model" placeholder="es. AMD Ryzen 9 7900X"
-                                        class="form-input" />
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Prezzo (€)</label>
-                                    <input v-model.number="newComponent.price" type="number" step="0.01"
-                                        placeholder="0.00" class="form-input" />
-                                </div>
-
-                                <div class="form-group">
-                                    <label>Specifiche (una per riga)</label>
-                                    <textarea v-model="specificationsText"
-                                        placeholder="12 Core / 24 Thread&#10;AM5&#10;Radeon Graphics"
-                                        class="form-textarea" rows="3" />
-                                </div>
-                            </div>
-
-                            <button v-if="productPreview && !showManualFields" @click="showManualFields = true"
-                                class="toggle-manual-btn">
-                                <Icon icon="mdi:pencil" />
-                                Modifica Manualmente
+                    <div class="form-group">
+                        <label>Link Amazon (opzionale)</label>
+                        <div class="url-input-group">
+                            <input v-model="newComponent.amazonUrl" placeholder="https://amzn.eu/d/..."
+                                class="form-input" @blur="fetchProductInfo" />
+                            <button v-if="newComponent.amazonUrl" @click="fetchProductInfo"
+                                :disabled="componentsStore.loading" class="fetch-btn">
+                                <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
+                                    :class="{ 'spin': componentsStore.loading }" />
                             </button>
                         </div>
-
-                        <footer class="modal-footer">
-                            <button @click="closeCreateModal" class="cancel-btn">
-                                Annulla
-                            </button>
-                            <button @click="confirmCreateComponent" :disabled="!canCreateComponent" class="confirm-btn">
-                                <Icon icon="mdi:check" />
-                                Crea Componente
-                            </button>
-                        </footer>
                     </div>
-                </div>
+
+                    <div v-if="productPreview" class="product-preview">
+                        <div class="preview-header">
+                            <Icon icon="mdi:eye" />
+                            <span>Anteprima Prodotto</span>
+                        </div>
+                        <div class="preview-content">
+                            <p><strong>Nome:</strong> {{ productPreview.title }}</p>
+                            <p><strong>Prezzo:</strong> €{{ productPreview.price.toFixed(2) }}</p>
+                            <div v-if="productPreview.specifications?.length">
+                                <strong>Specifiche:</strong>
+                                <div class="specs-preview">
+                                    <span v-for="spec in productPreview.specifications" :key="spec" class="spec-tag">
+                                        {{ spec }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Manual Input Fields -->
+                    <div v-if="!productPreview || showManualFields" class="manual-fields">
+                        <div class="form-group">
+                            <label>Nome Modello</label>
+                            <input v-model="newComponent.model" placeholder="es. AMD Ryzen 9 7900X"
+                                class="form-input" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Prezzo (€)</label>
+                            <input v-model.number="newComponent.price" type="number" step="0.01" placeholder="0.00"
+                                class="form-input" />
+                        </div>
+
+                        <div class="form-group">
+                            <label>Specifiche (una per riga)</label>
+                            <textarea v-model="specificationsText"
+                                placeholder="12 Core / 24 Thread&#10;AM5&#10;Radeon Graphics" class="form-textarea"
+                                rows="3" />
+                        </div>
+                    </div>
+
+                    <button v-if="productPreview && !showManualFields" @click="showManualFields = true"
+                        class="toggle-manual-btn">
+                        <Icon icon="mdi:pencil" />
+                        Modifica Manualmente
+                    </button>
+                </BaseModal>
             </div>
         </ion-content>
     </ion-page>
@@ -198,6 +178,7 @@
     import { useComponentsStore } from '@/stores/useComponentsStore';
     import { ComponentCategory, Component, AmazonProductInfo } from '@/interfaces/builds';
     import ComponentCard from '@/components/ComponentCard.vue';
+    import BaseModal from '@/components/BaseModal.vue';
 
     const router = useRouter();
     const componentsStore = useComponentsStore();
@@ -847,14 +828,6 @@
         }
     }
 
-    .product-preview {
-        background: rgba(var(--color-primary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-lg);
-        padding: var(--space-4);
-        margin: var(--space-4) 0;
-    }
-
     .preview-header {
         display: flex;
         align-items: center;
@@ -894,14 +867,6 @@
     .toggle-manual-btn:hover {
         background: rgba(var(--color-secondary-rgb), 0.2);
         color: var(--color-text-dark);
-    }
-
-    .modal-footer {
-        display: flex;
-        gap: var(--space-3);
-        padding: var(--space-6);
-        border-top: 1px solid rgba(var(--color-primary-rgb), 0.1);
-        justify-content: flex-end;
     }
 
     .cancel-btn,
@@ -969,12 +934,6 @@
     }
 
     @media (max-width: 480px) {
-        .component-footer {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: var(--space-2);
-        }
-
         .modal-overlay {
             padding: var(--space-2);
         }

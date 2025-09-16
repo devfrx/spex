@@ -33,12 +33,12 @@ const routes: Array<RouteRecordRaw> = [
   //   name: "CreateComponent",
   //   component: () => import("@/views/CreateComponentPage.vue"),
   // },
-  // {
-  //   path: "/components/:id/edit",
-  //   name: "EditComponent",
-  //   component: () => import("@/views/EditComponentPage.vue"),
-  //   props: true,
-  // },
+  {
+    path: "/components/:id/edit",
+    name: "EditComponent",
+    component: () => import("@/views/EditComponentPage.vue"),
+    props: true,
+  },
 ];
 
 const router = createRouter({

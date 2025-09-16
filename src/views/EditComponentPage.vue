@@ -279,11 +279,20 @@
             .filter(s => s.length > 0);
     });
 
-    const previewComponent = computed(() => {
-        if (!component.value) return null;
+    const previewComponent = computed<Component>(() => {
+        // Se il componente non è ancora caricato, creiamo un oggetto di preview di fallback
+        const base = component.value ?? {
+            id: 'preview',
+            category: allCategories[0] as ComponentCategory,
+            model: editForm.value.model || 'Nome modello',
+            price: editForm.value.price || 0,
+            specifications: [],
+            amazonUrl: editForm.value.amazonUrl || '',
+            imageUrl: editForm.value.imageUrl || ''
+        } as Component;
 
         return {
-            ...component.value,
+            ...base,
             category: editForm.value.category,
             model: editForm.value.model || 'Nome modello',
             price: editForm.value.price || 0,

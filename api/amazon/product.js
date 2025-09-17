@@ -88,21 +88,20 @@ async function lightweightFetch(url) {
 
 class AmazonScraper {
   async scrapeProduct(url) {
-    let page;
+    const browser = await getBrowser();
+    const page = await browser.newPage();
+
+    // Blocca risorse pesanti
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      const type = req.resourceType();
+      if (["image", "stylesheet", "font", "media"].includes(type)) {
+        return req.abort();
+      }
+      req.continue();
+    });
+
     try {
-      const browser = await getBrowser();
-      page = await browser.newPage();
-
-      // Blocca risorse pesanti
-      await page.setRequestInterception(true);
-      page.on("request", (req) => {
-        const type = req.resourceType();
-        if (["image", "stylesheet", "font", "media"].includes(type)) {
-          return req.abort();
-        }
-        req.continue();
-      });
-
       await page.setUserAgent(
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0 Safari/537.36"
       );
@@ -115,25 +114,8 @@ class AmazonScraper {
         timeout: 20000,
       });
 
-      // Accetta cookie banner se presente (Amazon EU)
-      try {
-        await page.evaluate(() => {
-          const btn =
-            document.querySelector("#sp-cc-accept") ||
-            document.querySelector('input[name="accept"]');
-          if (btn) (btn).click();
-        });
-      } catch {}
-
-      await Promise.race([
-        page.waitForSelector("#feature-bullets", { timeout: 4000 }),
-        page.waitForSelector("#detailBullets_feature_div", { timeout: 4000 }),
-        page.waitForSelector("#productDetails_techSpec_section_1", { timeout: 4000 }),
-        page.waitForSelector("#productDetails_techSpec_section_2", { timeout: 4000 }),
-        page.waitForTimeout(2000),
-      ]);
-
-      await page.waitForTimeout(600);
+      // Piccolo delay per contenuti asincroni minimi
+      await page.waitForTimeout(800);
 
       const productData = await page.evaluate(() => {
         const pickText = (selectors) => {
@@ -148,8 +130,12 @@ class AmazonScraper {
         };
 
         let title =
-          pickText(["#productTitle", ".product-title", "h1 span", ".a-size-large"]) ||
-          "Prodotto non trovato";
+          pickText([
+            "#productTitle",
+            ".product-title",
+            "h1 span",
+            ".a-size-large",
+          ]) || "Prodotto non trovato";
 
         // Prezzo
         const priceSelectors = [
@@ -159,16 +145,9 @@ class AmazonScraper {
           ".a-price-whole",
           '[data-testid="price-current"]',
         ];
-        let rawPrice = "0";
-        for (const sel of priceSelectors) {
-          const el = document.querySelector(sel);
-          const txt = el?.textContent?.trim();
-          if (txt && txt.length > 0) {
-            rawPrice = txt;
-            break;
-          }
-        }
-        let cleaned = rawPrice.replace(/[^\d.,]/g, "");
+        let priceRaw = pickText(priceSelectors) || "0";
+
+        let cleaned = priceRaw.replace(/[^\d.,]/g, "");
         if (cleaned.includes(".") && cleaned.includes(",")) {
           if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
             cleaned = cleaned.replace(/\./g, "").replace(",", ".");
@@ -183,86 +162,77 @@ class AmazonScraper {
           const parts = cleaned.split(".");
           if (parts[parts.length - 1].length !== 2) cleaned = parts.join("");
         }
-        const price = parseFloat(cleaned) || 0;
+        let price = parseFloat(cleaned);
+        if (isNaN(price) || price < 0) price = 0;
 
-        // Specifiche
         const specs = [];
         document
-          .querySelectorAll("#feature-bullets ul li span, #featurebullets_feature_div ul li span")
+          .querySelectorAll("#feature-bullets ul li span")
           .forEach((b) => {
-            const txt = b.textContent?.trim();
-            if (txt && txt.length > 10 && !/Visualizza|Mostra/i.test(txt) && specs.length < 8) {
+            const txt = b.innerText?.trim();
+            if (
+              txt &&
+              txt.length > 10 &&
+              !/Visualizza|Mostra/i.test(txt) &&
+              specs.length < 8
+            ) {
               specs.push(txt);
             }
           });
 
         document
-          .querySelectorAll("#detailBullets_feature_div li span.a-list-item")
-          .forEach((li) => {
-            if (specs.length >= 8) return;
-            const txt = li.textContent?.replace(/\s+/g, " ").trim() || "";
-            if (txt.includes(":") && txt.length > 6 && txt.length < 140) {
-              specs.push(txt);
-            }
-          });
-
-        document
-          .querySelectorAll(
-            "#productDetails_techSpec_section_1 tr, #productDetails_techSpec_section_2 tr, #productDetails_detailBullets_sections1 tr"
-          )
+          .querySelectorAll("#productDetails_techSpec_section_1 tr")
           .forEach((row) => {
             if (specs.length >= 8) return;
-            const label = row.querySelector("th, td:first-child")?.textContent?.trim();
-            const value = row.querySelector("td:last-child")?.textContent?.trim();
+            const label = row
+              .querySelector("td:first-child")
+              ?.textContent?.trim();
+            const value = row
+              .querySelector("td:last-child")
+              ?.textContent?.trim();
             if (label && value && label.length < 50) {
               specs.push(`${label}: ${value}`);
             }
           });
 
-        // Immagine
         let imageUrl = "";
-        const img =
-          document.querySelector("#landingImage") ||
-          document.querySelector("#imgTagWrapperId img") ||
-          document.querySelector(".a-dynamic-image");
-        if (img) {
-          const src = img.getAttribute("src") || "";
-          const oldHires = img.getAttribute("data-old-hires") || "";
-          const dynamic = img.getAttribute("data-a-dynamic-image") || "";
-          if (src) imageUrl = src;
-          else if (oldHires) imageUrl = oldHires;
-          else if (dynamic) {
-            try {
-              const obj = JSON.parse(dynamic);
-              const first = Object.keys(obj)[0];
-              if (first) imageUrl = first;
-            } catch {}
+        for (const sel of [
+          "#landingImage",
+          "#imgTagWrapperId img",
+          ".a-dynamic-image",
+        ]) {
+          const el = document.querySelector(sel);
+          if (el && el instanceof HTMLImageElement && el.src) {
+            imageUrl = el.src;
+            break;
           }
         }
 
         return {
           title,
           price,
-          specifications: specs.slice(0, 8),
+          specifications: specs,
           imageUrl,
         };
       });
 
       return productData;
     } catch (err) {
-      console.error("[SCRAPER] Launch/Run error:", err?.message || err);
-      // Fallback leggero anche se fallisce il launch
+      console.error("[SCRAPER] Puppeteer error:", err?.message);
+
+      // Fallback leggero
       const fallback = await lightweightFetch(url);
       if (fallback) {
-        console.warn("[SCRAPER] Using lightweight fallback (launch/run failure)");
+        console.warn("[SCRAPER] Using lightweight fallback");
         return fallback;
       }
-      throw err;
+
+      throw new Error("Impossibile recuperare i dati del prodotto");
     } finally {
-      if (page) {
-        try {
-          await page.close();
-        } catch {}
+      try {
+        await page.close();
+      } catch {
+        /* ignore */
       }
     }
   }

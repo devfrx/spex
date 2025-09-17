@@ -3,10 +3,9 @@ import chromium from "@sparticuz/chromium";
 
 /*
   Config Vercel (Node runtime + region vicina + maxDuration già in vercel.json)
-  Puoi anche spostare maxDuration qui se preferisci mantenere single‑source.
 */
 export const config = {
-  runtime: "nodejs",
+  runtime: "nodejs18.x",
   regions: ["fra1"],
 };
 
@@ -25,6 +24,7 @@ async function getBrowser() {
         "--disable-web-security",
         "--no-sandbox",
         "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
       ],
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
@@ -45,7 +45,6 @@ async function lightweightFetch(url) {
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0 Safari/537.36",
         "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
       },
-      // Amazon blocca HEAD spesso
       method: "GET",
     });
     const html = await res.text();
@@ -81,9 +80,17 @@ async function lightweightFetch(url) {
       imageUrl: undefined,
       _lightweight: true,
     };
-  } catch {
+  } catch (error) {
+    console.error("[LIGHTWEIGHT] Error:", error.message);
     return null;
   }
+}
+
+/**
+ * Utility per aspettare con Promise
+ */
+function delay(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 class AmazonScraper {
@@ -91,7 +98,7 @@ class AmazonScraper {
     const browser = await getBrowser();
     const page = await browser.newPage();
 
-    // Blocca risorse pesanti
+    // Blocca risorse pesanti per velocizzare
     await page.setRequestInterception(true);
     page.on("request", (req) => {
       const type = req.resourceType();
@@ -114,8 +121,8 @@ class AmazonScraper {
         timeout: 20000,
       });
 
-      // Piccolo delay per contenuti asincroni minimi
-      await page.waitForTimeout(800);
+      // Sostituito page.waitForTimeout con delay personalizzato
+      await delay(800);
 
       const productData = await page.evaluate(() => {
         const pickText = (selectors) => {
@@ -137,73 +144,101 @@ class AmazonScraper {
             ".a-size-large",
           ]) || "Prodotto non trovato";
 
-        // Prezzo
+        // Prezzo con selettori migliorati
         const priceSelectors = [
           ".a-price .a-offscreen",
           "#price_inside_buybox",
           ".a-price-range .a-price .a-offscreen",
           ".a-price-whole",
           '[data-testid="price-current"]',
+          ".a-price-symbol + .a-price-whole",
         ];
         let priceRaw = pickText(priceSelectors) || "0";
 
+        // Normalizzazione prezzo migliorata
         let cleaned = priceRaw.replace(/[^\d.,]/g, "");
         if (cleaned.includes(".") && cleaned.includes(",")) {
           if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+            // Formato europeo: 1.234,56
             cleaned = cleaned.replace(/\./g, "").replace(",", ".");
           } else {
+            // Formato americano: 1,234.56
             cleaned = cleaned.replace(/,/g, "");
           }
         } else if (cleaned.includes(",")) {
           const parts = cleaned.split(",");
-          if (parts[parts.length - 1].length === 2) cleaned = parts.join(".");
-          else cleaned = cleaned.replace(/,/g, "");
+          if (parts[parts.length - 1].length === 2) {
+            // Probabilmente decimali: 1234,56 -> 1234.56
+            cleaned = parts.join(".");
+          } else {
+            // Probabilmente migliaia: 1,234 -> 1234
+            cleaned = cleaned.replace(/,/g, "");
+          }
         } else if (cleaned.includes(".")) {
           const parts = cleaned.split(".");
-          if (parts[parts.length - 1].length !== 2) cleaned = parts.join("");
+          if (parts[parts.length - 1].length !== 2) {
+            // Probabilmente migliaia: 1.234 -> 1234
+            cleaned = parts.join("");
+          }
         }
+
         let price = parseFloat(cleaned);
         if (isNaN(price) || price < 0) price = 0;
 
+        // Estrazione specifiche migliorata
         const specs = [];
+
+        // Feature bullets
         document
-          .querySelectorAll("#feature-bullets ul li span")
+          .querySelectorAll("#feature-bullets ul li span, .a-unordered-list .a-list-item")
           .forEach((b) => {
             const txt = b.innerText?.trim();
             if (
               txt &&
               txt.length > 10 &&
-              !/Visualizza|Mostra/i.test(txt) &&
-              specs.length < 8
+              txt.length < 200 &&
+              !/Visualizza|Mostra|Clicca|Scopri/i.test(txt) &&
+              specs.length < 6
             ) {
               specs.push(txt);
             }
           });
 
+        // Technical specifications table
         document
-          .querySelectorAll("#productDetails_techSpec_section_1 tr")
+          .querySelectorAll("#productDetails_techSpec_section_1 tr, #productDetails_detailBullets_sections1 tr")
           .forEach((row) => {
             if (specs.length >= 8) return;
             const label = row
-              .querySelector("td:first-child")
+              .querySelector("td:first-child, th:first-child")
               ?.textContent?.trim();
             const value = row
               .querySelector("td:last-child")
               ?.textContent?.trim();
-            if (label && value && label.length < 50) {
+            if (label && value && label.length < 50 && value.length < 100) {
               specs.push(`${label}: ${value}`);
             }
           });
 
+        // Immagine prodotto con selettori aggiornati
         let imageUrl = "";
-        for (const sel of [
+        const imageSelectors = [
           "#landingImage",
           "#imgTagWrapperId img",
           ".a-dynamic-image",
-        ]) {
+          "[data-old-hires]",
+          ".a-spacing-small img",
+        ];
+
+        for (const sel of imageSelectors) {
           const el = document.querySelector(sel);
-          if (el && el instanceof HTMLImageElement && el.src) {
+          if (el && el.src && el.src.startsWith("http")) {
             imageUrl = el.src;
+            break;
+          }
+          // Prova anche con data-old-hires per immagini ad alta risoluzione
+          if (el && el.getAttribute && el.getAttribute("data-old-hires")) {
+            imageUrl = el.getAttribute("data-old-hires");
             break;
           }
         }
@@ -220,7 +255,7 @@ class AmazonScraper {
     } catch (err) {
       console.error("[SCRAPER] Puppeteer error:", err?.message);
 
-      // Fallback leggero
+      // Fallback leggero in caso di errore
       const fallback = await lightweightFetch(url);
       if (fallback) {
         console.warn("[SCRAPER] Using lightweight fallback");
@@ -231,15 +266,16 @@ class AmazonScraper {
     } finally {
       try {
         await page.close();
-      } catch {
-        /* ignore */
+      } catch (closeError) {
+        console.warn("[SCRAPER] Error closing page:", closeError.message);
       }
     }
   }
 }
 
-// Handler per Vercel
+// Handler principale per Vercel
 export default async function handler(req, res) {
+  // Headers CORS
   res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
@@ -255,38 +291,54 @@ export default async function handler(req, res) {
     res.status(200).end();
     return;
   }
+
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     const { url } = req.body || {};
+
+    // Validazione URL Amazon migliorata
     const isValidAmazonUrl =
       url &&
+      typeof url === "string" &&
       (url.includes("amazon.") ||
         url.includes("amzn.") ||
-        url.includes("a.co"));
+        url.includes("a.co")) &&
+      (url.startsWith("http://") || url.startsWith("https://"));
 
     if (!isValidAmazonUrl) {
-      return res.status(400).json({ error: "URL Amazon non valido" });
+      return res.status(400).json({
+        error: "URL Amazon non valido",
+        received: url
+      });
     }
 
     // Flag debug per bypass (facoltativo)
     if (process.env.AMAZON_SCRAPER_DEBUG === "1") {
       return res.json({
         title: "DEBUG MODE PRODUCT",
-        price: 0,
+        price: 99.99,
         specifications: ["Debug spec A", "Debug spec B"],
         imageUrl: "",
         _debug: true,
       });
     }
 
+    console.log("[SCRAPER] Processing URL:", url);
+
     const scraper = new AmazonScraper();
     const productInfo = await scraper.scrapeProduct(url);
+
+    console.log("[SCRAPER] Success:", { title: productInfo.title, price: productInfo.price });
     res.json(productInfo);
+
   } catch (error) {
-    console.error("[SCRAPER] Final error:", error?.message);
-    res.status(500).json({ error: "Errore nel recupero dei dati" });
+    console.error("[SCRAPER] Final error:", error?.message || error);
+    res.status(500).json({
+      error: "Errore nel recupero dei dati",
+      details: error?.message || "Unknown error"
+    });
   }
 }

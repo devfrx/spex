@@ -29,7 +29,7 @@ class AmazonScraper {
         let title = "Prodotto non trovato";
         const titleSelectors = [
           "#productTitle",
-          ".product-title", 
+          ".product-title",
           "h1 span",
           ".a-size-large",
         ];
@@ -54,28 +54,77 @@ class AmazonScraper {
         for (const selector of priceSelectors) {
           const priceElement = document.querySelector(selector);
           if (priceElement) {
-            const priceText = priceElement.innerText || priceElement.textContent;
-            const priceMatch = priceText.match(/[\d,]+\.?\d*/);
-            if (priceMatch) {
-              price = parseFloat(priceMatch[0].replace(",", ""));
+            const priceText = (
+              priceElement.innerText ||
+              priceElement.textContent ||
+              ""
+            ).trim();
+
+            // Mantieni solo cifre, punti e virgole
+            let cleaned = priceText.replace(/[^\d.,]/g, "");
+
+            /*
+              Casi:
+              - "1.359,00"  -> formato EU (punto = migliaia, virgola = decimale)
+              - "1,359.00"  -> formato US (virgola = migliaia, punto = decimale)
+              - "1359,00"   -> EU senza separatore migliaia
+              - "1359.00"   -> US senza separatore migliaia
+              - "1.359"     -> probabile 1359 (niente decimali visibili)
+            */
+            if (cleaned.includes(".") && cleaned.includes(",")) {
+              if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+                // Formato EU
+                cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+              } else {
+                // Formato US
+                cleaned = cleaned.replace(/,/g, "");
+              }
+            } else if (cleaned.includes(",")) {
+              // Solo virgola: se le ultime 2 cifre dopo la virgola => decimali
+              const parts = cleaned.split(",");
+              if (parts[parts.length - 1].length === 2) {
+                cleaned = parts.join(".");
+              } else {
+                cleaned = cleaned.replace(/,/g, "");
+              }
+            } else if (cleaned.includes(".")) {
+              // Solo punto: se ultimo blocco ha 2 cifre => decimali, altrimenti è migliaia
+              const parts = cleaned.split(".");
+              if (parts[parts.length - 1].length !== 2) {
+                cleaned = parts.join(""); // trattiamo i punti come separatori migliaia
+              }
+            }
+
+            const parsed = parseFloat(cleaned);
+            if (!isNaN(parsed) && parsed > 0) {
+              price = parsed;
               break;
             }
           }
         }
 
         const specs = [];
-        
+
         // Feature bullets
-        const featureBullets = document.querySelectorAll("#feature-bullets ul li span");
+        const featureBullets = document.querySelectorAll(
+          "#feature-bullets ul li span"
+        );
         featureBullets.forEach((bullet) => {
           const text = bullet.innerText?.trim();
-          if (text && text.length > 10 && !text.includes("Visualizza") && !text.includes("Mostra")) {
+          if (
+            text &&
+            text.length > 10 &&
+            !text.includes("Visualizza") &&
+            !text.includes("Mostra")
+          ) {
             specs.push(text);
           }
         });
 
         // Technical details
-        const techSpecs = document.querySelectorAll("#productDetails_techSpec_section_1 tr");
+        const techSpecs = document.querySelectorAll(
+          "#productDetails_techSpec_section_1 tr"
+        );
         techSpecs.forEach((row) => {
           const label = row.querySelector("td:first-child")?.innerText?.trim();
           const value = row.querySelector("td:last-child")?.innerText?.trim();
@@ -85,8 +134,12 @@ class AmazonScraper {
         });
 
         let imageUrl = "";
-        const imageSelectors = ["#landingImage", "#imgTagWrapperId img", ".a-dynamic-image"];
-        
+        const imageSelectors = [
+          "#landingImage",
+          "#imgTagWrapperId img",
+          ".a-dynamic-image",
+        ];
+
         for (const selector of imageSelectors) {
           const imageElement = document.querySelector(selector);
           if (imageElement && imageElement.src) {
@@ -116,24 +169,34 @@ class AmazonScraper {
 // Handler per Vercel
 export default async function handler(req, res) {
   // Cors headers
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
+  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader(
+    "Access-Control-Allow-Methods",
+    "GET,OPTIONS,PATCH,DELETE,POST,PUT"
+  );
+  res.setHeader(
+    "Access-Control-Allow-Headers",
+    "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version"
+  );
 
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     res.status(200).end();
     return;
   }
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
     const { url } = req.body;
 
-    const isValidAmazonUrl = url && (url.includes("amazon.") || url.includes("amzn.") || url.includes("a.co"));
+    const isValidAmazonUrl =
+      url &&
+      (url.includes("amazon.") ||
+        url.includes("amzn.") ||
+        url.includes("a.co"));
 
     if (!isValidAmazonUrl) {
       return res.status(400).json({ error: "URL Amazon non valido" });

@@ -2,169 +2,290 @@
     <ion-page>
         <ion-content>
             <div class="components-page">
-                <!-- Background Grid Animation -->
-                <div class="bg-grid"></div>
-                <div class="bg-overlay"></div>
+                <!-- Animated Background -->
+                <div class="bg-mesh"></div>
+                <div class="bg-gradient"></div>
 
-                <!-- Header -->
+                <!-- Premium Header -->
                 <header class="page-header">
                     <div class="header-content">
-                        <button @click="goBack" class="back-btn">
-                            <Icon icon="mdi:arrow-left" width="24" height="24" />
-                        </button>
-                        <div class="header-info">
-                            <h1>Components Library</h1>
-                            <p>Gestisci il database completo dei tuoi componenti PC</p>
+                        <nav class="breadcrumb">
+                            <button @click="goBack" class="breadcrumb-item">
+                                <Icon icon="mdi:chevron-left" />
+                                <span>Home</span>
+                            </button>
+                            <Icon icon="mdi:chevron-right" class="breadcrumb-separator" />
+                            <span class="breadcrumb-current">Components Library</span>
+                        </nav>
+
+                        <div class="header-main">
+                            <div class="page-identity">
+                                <div class="page-avatar">
+                                    <Icon icon="mdi:memory" />
+                                </div>
+                                <div class="page-meta">
+                                    <h1 class="page-name">Components Library</h1>
+                                    <p class="page-description">Gestisci il database completo dei tuoi componenti PC</p>
+                                </div>
+                            </div>
+
+                            <div class="header-actions">
+                                <button @click="showCreateModal = true" class="action-primary">
+                                    <Icon icon="mdi:plus" />
+                                    <span>New Component</span>
+                                </button>
+                            </div>
                         </div>
-                        <button @click="showCreateModal = true" class="create-btn">
-                            <Icon icon="mdi:plus" width="20" height="20" />
-                            Nuovo Componente
-                        </button>
                     </div>
                 </header>
 
-                <!-- Stats & Filters Section -->
-                <div class="filters-section">
-                    <div class="stats-container">
-                        <div class="stat-card">
-                            <Icon icon="mdi:memory" class="stat-icon" />
-                            <div class="stat-info">
-                                <span class="stat-value">{{ totalComponents }}</span>
-                                <span class="stat-label">Componenti Totali</span>
+                <!-- Main Dashboard -->
+                <main class="dashboard">
+                    <!-- Performance Metrics -->
+                    <section class="metrics-section">
+                        <div class="section-header">
+                            <h2>Library Overview</h2>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-card components">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper">
+                                        <Icon icon="mdi:memory" />
+                                    </div>
+                                    <div class="metric-badge">{{ totalComponents }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Total Components</h3>
+                                    <p>In database</p>
+                                </div>
+                            </div>
+
+                            <div class="metric-card budget">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper budget-icon">
+                                        <Icon icon="mdi:currency-eur" />
+                                    </div>
+                                    <div class="metric-badge budget-badge">€{{ totalValue.toFixed(0) }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Total Value</h3>
+                                    <p>Library worth</p>
+                                </div>
+                            </div>
+
+                            <!-- <div class="metric-card categories">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper categories-icon">
+                                        <Icon icon="mdi:view-grid" />
+                                    </div>
+                                    <div class="metric-badge categories-badge">{{ allCategories.length }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Categories</h3>
+                                    <p>Component types</p>
+                                    <div class="trend-indicator positive">
+                                        <Icon icon="mdi:check-circle" />
+                                        <span>Complete coverage</span>
+                                    </div>
+                                </div>
+                            </div> -->
+                        </div>
+                    </section>
+
+                    <!-- Filters & Search -->
+                    <section class="filters-section">
+                        <div class="section-header">
+                            <h2>Filter & Search</h2>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="filters-container">
+                            <div class="search-field">
+                                <div class="search-box">
+                                    <Icon icon="mdi:magnify" class="search-icon" />
+                                    <input v-model="searchQuery" placeholder="Search components..."
+                                        class="search-input premium" />
+                                </div>
+                            </div>
+
+                            <div class="filter-controls">
+                                <div class="filter-field">
+                                    <label class="filter-label">
+                                        <Icon icon="mdi:tag" />
+                                        Category
+                                    </label>
+                                    <select v-model="selectedCategoryFilter" class="filter-select premium">
+                                        <option value="">All Categories</option>
+                                        <option v-for="category in allCategories" :key="category" :value="category">
+                                            {{ getCategoryName(category) }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">
+                                        <Icon icon="mdi:sort" />
+                                        Sort By
+                                    </label>
+                                    <select v-model="sortBy" class="filter-select premium">
+                                        <option value="name">Name</option>
+                                        <option value="price">Price</option>
+                                        <option value="category">Category</option>
+                                        <option value="date">Date Added</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <Icon icon="mdi:currency-eur" class="stat-icon" />
-                            <div class="stat-info">
-                                <span class="stat-value">€{{ totalValue.toFixed(0) }}</span>
-                                <span class="stat-label">Valore Totale</span>
+                    </section>
+
+                    <!-- Components Collection -->
+                    <section class="collection-section">
+                        <div class="section-header">
+                            <h2>Components Collection</h2>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div v-if="filteredComponents.length === 0 && !searchQuery && !selectedCategoryFilter"
+                            class="empty-state">
+                            <div class="empty-visual">
+                                <Icon icon="mdi:package-variant" />
+                            </div>
+                            <div class="empty-content">
+                                <h3>No components yet</h3>
+                                <p>Start building your component library by adding your first PC part</p>
+                                <button @click="showCreateModal = true" class="empty-action">
+                                    <Icon icon="mdi:plus" />
+                                    Create First Component
+                                </button>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <Icon icon="mdi:chart-box" class="stat-icon" />
-                            <div class="stat-info">
-                                <span class="stat-value">{{ allCategories.length }}</span>
-                                <span class="stat-label">Categorie</span>
+
+                        <!-- No Results State -->
+                        <div v-else-if="filteredComponents.length === 0" class="empty-state">
+                            <div class="empty-visual">
+                                <Icon icon="mdi:magnify" />
+                            </div>
+                            <div class="empty-content">
+                                <h3>No results found</h3>
+                                <p>Try adjusting your search filters to find what you're looking for</p>
                             </div>
                         </div>
-                    </div>
 
-                    <div class="filter-controls">
-                        <div class="search-box">
-                            <Icon icon="mdi:magnify" class="search-icon" />
-                            <input v-model="searchQuery" placeholder="Cerca componenti..." class="search-input" />
+                        <!-- Components Grid -->
+                        <div v-else class="components-grid">
+                            <ComponentCard v-for="component in filteredComponents" :key="component.id"
+                                :component="component" @click="editComponent" @duplicate="duplicateComponent"
+                                @delete="deleteComponent" />
                         </div>
+                    </section>
+                </main>
 
-                        <select v-model="selectedCategoryFilter" class="category-filter">
-                            <option value="">Tutte le categorie</option>
-                            <option v-for="category in allCategories" :key="category" :value="category">
-                                {{ getCategoryName(category) }}
-                            </option>
-                        </select>
-
-                        <select v-model="sortBy" class="sort-select">
-                            <option value="name">Nome</option>
-                            <option value="price">Prezzo</option>
-                            <option value="category">Categoria</option>
-                            <option value="date">Data</option>
-                        </select>
-                    </div>
-                </div>
-
-                <!-- Components Grid -->
-                <div class="components-container">
-                    <div v-if="filteredComponents.length === 0" class="empty-state">
-                        <Icon icon="mdi:package-variant" class="empty-icon" />
-                        <h3>{{ searchQuery || selectedCategoryFilter ? 'Nessun risultato' : 'Nessun componente' }}</h3>
-                        <p>{{ searchQuery || selectedCategoryFilter ? 'Prova a modificare i filtri di ricerca' :
-                            'Inizia creando il tuo primo componente PC' }}</p>
-                        <button v-if="!searchQuery && !selectedCategoryFilter" @click="showCreateModal = true"
-                            class="cta-btn">
-                            <Icon icon="mdi:plus" />
-                            Crea Primo Componente
-                        </button>
-                    </div>
-
-                    <div v-else class="components-grid">
-                        <ComponentCard v-for="component in filteredComponents" :key="component.id"
-                            :component="component" @click="editComponent" @duplicate="duplicateComponent"
-                            @delete="deleteComponent" />
-                    </div>
-                </div>
-
-                <!-- Create Component Modal -->
-                <BaseModal v-model="showCreateModal" title="Nuovo Componente" icon="mdi:package-variant-plus" size="md"
+                <!-- Enhanced Create Component Modal -->
+                <BaseModal v-model="showCreateModal" title="Create Component" icon="mdi:package-variant-plus" size="lg"
                     :confirm-disabled="!canCreateComponent" :loading="componentsStore.loading"
-                    confirm-text="Crea Componente" @confirm="confirmCreateComponent" @cancel="closeCreateModal">
-                    <div class="form-group">
-                        <label>Categoria</label>
-                        <select v-model="newComponent.category" class="form-select">
-                            <option value="">Seleziona categoria</option>
-                            <option v-for="category in allCategories" :key="category" :value="category">
-                                {{ getCategoryName(category) }}
-                            </option>
-                        </select>
-                    </div>
+                    confirm-text="Create Component" @confirm="confirmCreateComponent" @cancel="closeCreateModal">
 
-                    <div class="form-group">
-                        <label>Link Amazon (opzionale)</label>
-                        <div class="url-input-group">
-                            <input v-model="newComponent.amazonUrl" placeholder="https://amzn.eu/d/..."
-                                class="form-input" @blur="fetchProductInfo" />
-                            <button v-if="newComponent.amazonUrl" @click="fetchProductInfo"
-                                :disabled="componentsStore.loading" class="fetch-btn">
-                                <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
-                                    :class="{ 'spin': componentsStore.loading }" />
-                            </button>
-                        </div>
-                    </div>
+                    <div class="modal-form-container">
+                        <div class="form-section">
+                            <div class="form-field">
+                                <label class="field-label">
+                                    <Icon icon="mdi:tag-outline" />
+                                    Component Category
+                                </label>
+                                <select v-model="newComponent.category" class="field-select premium">
+                                    <option value="">Choose category</option>
+                                    <option v-for="category in allCategories" :key="category" :value="category">
+                                        {{ getCategoryName(category) }}
+                                    </option>
+                                </select>
+                            </div>
 
-                    <div v-if="productPreview" class="product-preview">
-                        <div class="preview-header">
-                            <Icon icon="mdi:eye" />
-                            <span>Anteprima Prodotto</span>
-                        </div>
-                        <div class="preview-content">
-                            <p><strong>Nome:</strong> {{ productPreview.title }}</p>
-                            <p><strong>Prezzo:</strong> €{{ productPreview.price.toFixed(2) }}</p>
-                            <div v-if="productPreview.specifications?.length">
-                                <strong>Specifiche:</strong>
-                                <div class="specs-preview">
-                                    <span v-for="spec in productPreview.specifications" :key="spec" class="spec-tag">
-                                        {{ spec }}
-                                    </span>
+                            <div class="form-field">
+                                <label class="field-label">
+                                    <Icon icon="mdi:shopping" />
+                                    Amazon Product URL (Optional)
+                                </label>
+                                <div class="input-group premium">
+                                    <input v-model="newComponent.amazonUrl" placeholder="https://amzn.eu/d/..."
+                                        class="field-input" @blur="fetchProductInfo" />
+                                    <button v-if="newComponent.amazonUrl" @click="fetchProductInfo"
+                                        :disabled="componentsStore.loading" class="input-action">
+                                        <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
+                                            :class="{ 'loading-spin': componentsStore.loading }" />
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Product Preview -->
+                            <div v-if="productPreview" class="product-preview">
+                                <div class="preview-header">
+                                    <Icon icon="mdi:check-decagram" />
+                                    <span>Product Detected</span>
+                                </div>
+                                <div class="preview-details">
+                                    <div class="detail-row">
+                                        <span class="detail-label">Name:</span>
+                                        <span class="detail-value">{{ productPreview.title }}</span>
+                                    </div>
+                                    <div class="detail-row">
+                                        <span class="detail-label">Price:</span>
+                                        <span class="detail-value price">€{{ productPreview.price.toFixed(2) }}</span>
+                                    </div>
+                                    <div v-if="productPreview.specifications?.length" class="detail-row specs">
+                                        <span class="detail-label">Specs:</span>
+                                        <div class="specs-preview">
+                                            <span v-for="spec in productPreview.specifications.slice(0, 3)" :key="spec"
+                                                class="preview-spec">
+                                                {{ spec }}
+                                            </span>
+                                            <span v-if="productPreview.specifications.length > 3" class="spec-more">
+                                                +{{ productPreview.specifications.length - 3 }} more
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button @click="showManualFields = true" class="toggle-manual-btn">
+                                    <Icon icon="mdi:pencil" />
+                                    Edit Manually
+                                </button>
+                            </div>
+
+                            <!-- Manual Input Fields -->
+                            <div v-if="!productPreview || showManualFields" class="manual-fields">
+                                <div class="form-field">
+                                    <label class="field-label">
+                                        <Icon icon="mdi:cube-outline" />
+                                        Model Name
+                                    </label>
+                                    <input v-model="newComponent.model" placeholder="e.g. AMD Ryzen 9 7900X"
+                                        class="field-input premium" />
+                                </div>
+
+                                <div class="form-field">
+                                    <label class="field-label">
+                                        <Icon icon="mdi:currency-eur" />
+                                        Price (€)
+                                    </label>
+                                    <input v-model.number="newComponent.price" type="number" step="0.01" min="0"
+                                        placeholder="0.00" class="field-input premium" />
+                                </div>
+
+                                <div class="form-field">
+                                    <label class="field-label">
+                                        <Icon icon="mdi:format-list-bulleted" />
+                                        Specifications (One per line)
+                                    </label>
+                                    <textarea v-model="specificationsText"
+                                        placeholder="12 Core / 24 Thread&#10;AM5 Socket&#10;Radeon Graphics"
+                                        class="field-textarea premium" rows="4" />
                                 </div>
                             </div>
                         </div>
                     </div>
-
-                    <!-- Manual Input Fields -->
-                    <div v-if="!productPreview || showManualFields" class="manual-fields">
-                        <div class="form-group">
-                            <label>Nome Modello</label>
-                            <input v-model="newComponent.model" placeholder="es. AMD Ryzen 9 7900X"
-                                class="form-input" />
-                        </div>
-
-                        <div class="form-group">
-                            <label>Prezzo (€)</label>
-                            <input v-model.number="newComponent.price" type="number" step="0.01" placeholder="0.00"
-                                class="form-input" />
-                        </div>
-
-                        <div class="form-group">
-                            <label>Specifiche (una per riga)</label>
-                            <textarea v-model="specificationsText"
-                                placeholder="12 Core / 24 Thread&#10;AM5&#10;Radeon Graphics" class="form-textarea"
-                                rows="3" />
-                        </div>
-                    </div>
-
-                    <button v-if="productPreview && !showManualFields" @click="showManualFields = true"
-                        class="toggle-manual-btn">
-                        <Icon icon="mdi:pencil" />
-                        Modifica Manualmente
-                    </button>
                 </BaseModal>
             </div>
         </ion-content>
@@ -406,415 +527,623 @@
         background: var(--color-bg-dark);
         color: var(--color-text-dark);
         position: relative;
-        overflow: hidden;
+        overflow-x: hidden;
     }
 
-    /* Background Effects */
-    .bg-grid {
+    /* Premium Background Effects */
+    .bg-mesh {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         background-image:
-            linear-gradient(rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px);
-        background-size: 60px 60px;
-        animation: gridMove 35s linear infinite;
-        z-index: 1;
+            radial-gradient(circle at 25% 25%, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(var(--color-accent-rgb), 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(var(--color-info-rgb), 0.1) 0%, transparent 70%);
+        z-index: var(--z-base);
     }
 
-    @keyframes gridMove {
-        0% {
-            transform: translate(0, 0);
-        }
-
-        100% {
-            transform: translate(60px, 60px);
-        }
-    }
-
-    .bg-overlay {
+    .bg-gradient {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(circle at 25% 25%,
-                rgba(var(--color-primary-rgb), 0.08) 0%,
-                transparent 50%),
-            radial-gradient(circle at 75% 75%,
-                rgba(var(--color-accent-rgb), 0.06) 0%,
-                transparent 50%);
-        z-index: 2;
+        background:
+            linear-gradient(135deg, rgba(var(--color-surface-dark-rgb), 0.95) 0%, rgba(var(--color-bg-dark-rgb), 0.98) 100%);
+        backdrop-filter: blur(var(--blur-lg));
+        z-index: calc(var(--z-base) + 1);
     }
 
-    /* Header */
+    /* Premium Header */
     .page-header {
-        position: relative;
-        z-index: 3;
-        background: rgba(var(--color-surface-dark-rgb), 0.8);
-        backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        padding: var(--space-6);
+        position: sticky;
+        top: 0;
+        z-index: var(--z-sticky);
+        background: rgba(var(--color-bg-dark-rgb), 0.85);
+        backdrop-filter: blur(var(--blur-lg));
+        border-bottom: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        padding: var(--space-8) 0;
     }
 
     .header-content {
-        display: flex;
-        align-items: center;
-        gap: var(--space-4);
-        max-width: 1200px;
+        position: relative;
+        z-index: calc(var(--z-base) + 2);
+        max-width: var(--container-2xl);
         margin: 0 auto;
+        padding: 0 var(--space-8);
     }
 
-    .back-btn,
-    .create-btn {
+    .breadcrumb {
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        padding: var(--space-3) var(--space-4);
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.3);
-        border-radius: var(--radius-lg);
-        color: var(--color-primary-light);
-        text-decoration: none;
-        transition: var(--transition-all);
-        cursor: pointer;
+        margin-bottom: var(--space-6);
         font-size: var(--font-size-sm);
+    }
+
+    .breadcrumb-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) 0;
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        transition: var(--transition-fast);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item:hover {
+        color: var(--color-text-dark);
+    }
+
+    .breadcrumb-separator {
+        color: var(--color-secondary-500);
+        font-size: var(--font-size-md);
+    }
+
+    .breadcrumb-current {
+        color: var(--color-primary);
         font-weight: var(--font-weight-medium);
     }
 
-    .back-btn:hover,
-    .create-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.2);
-        border-color: rgba(var(--color-primary-rgb), 0.5);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-primary);
+    .header-main {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-8);
     }
 
-    .header-info {
+    .page-identity {
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
         flex: 1;
     }
 
-    .header-info h1 {
-        margin: 0 0 var(--space-1) 0;
-        font-size: var(--font-size-2xl);
+    .page-avatar {
+        width: var(--space-16);
+        height: var(--space-16);
+        background: var(--gradient-primary);
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-3xl);
+        color: var(--color-white);
+        box-shadow: 0 10px 25px rgba(var(--color-primary-rgb), 0.3);
+    }
+
+    .page-meta {
+        flex: 1;
+    }
+
+    .page-name {
+        font-size: var(--font-size-4xl);
         font-weight: var(--font-weight-bold);
-        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        margin: 0 0 var(--space-2) 0;
+        background: linear-gradient(135deg, var(--color-text-dark), var(--color-text-muted));
         background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        line-height: var(--line-height-tight);
     }
 
-    .header-info p {
-        margin: 0;
+    .page-description {
+        font-size: var(--font-size-md);
         color: var(--color-text-muted);
+        margin: 0;
+        line-height: var(--line-height-normal);
+    }
+
+    .header-actions {
+        display: flex;
+        gap: var(--space-4);
+    }
+
+    .action-primary {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-6);
+        background: var(--gradient-primary);
+        border: none;
+        border-radius: var(--radius-lg);
+        color: var(--color-white);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: var(--transition-medium);
+        box-shadow: var(--shadow-primary);
+    }
+
+    .action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.5);
+    }
+
+    /* Dashboard Layout */
+    .dashboard {
+        position: relative;
+        z-index: calc(var(--z-base) + 2);
+        max-width: var(--container-2xl);
+        margin: 0 auto;
+        padding: var(--space-12) var(--space-8);
+    }
+
+    /* Section Headers */
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
+        margin-bottom: var(--space-10);
+    }
+
+    .section-header h2 {
+        font-size: var(--font-size-3xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-dark);
+        margin: 0;
+    }
+
+    .section-divider {
+        flex: 1;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.6), transparent);
+        border-radius: var(--radius-full);
+    }
+
+    /* Premium Metrics */
+    .metrics-section {
+        margin-bottom: var(--space-16);
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: var(--space-8);
+    }
+
+    .metric-card {
+        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-8);
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
+        transition: var(--transition-medium);
+        backdrop-filter: blur(var(--blur-sm));
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+        opacity: var(--opacity-80);
+    }
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(var(--color-primary-rgb), 0.4);
+        box-shadow: 0 20px 40px rgba(var(--color-primary-rgb), 0.2);
+    }
+
+    .metric-card.budget::before {
+        background: linear-gradient(90deg, var(--color-success-dark), var(--color-success));
+    }
+
+    .metric-card.categories::before {
+        background: linear-gradient(90deg, var(--color-info), var(--color-accent));
+    }
+
+    .metric-visual {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .metric-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        background: rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-3xl);
+        color: var(--color-primary);
+    }
+
+    .metric-icon-wrapper.budget-icon {
+        background: rgba(var(--color-success-rgb), 0.2);
+        color: var(--color-success);
+    }
+
+    .metric-icon-wrapper.categories-icon {
+        background: rgba(var(--color-info-rgb), 0.2);
+        color: var(--color-info);
+    }
+
+    .metric-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: var(--color-primary);
+        color: var(--color-white);
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-lg);
         font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.4);
+    }
+
+    .metric-badge.budget-badge {
+        background: var(--color-success);
+        box-shadow: 0 4px 12px rgba(var(--color-success-rgb), 0.4);
+    }
+
+    .metric-badge.categories-badge {
+        background: var(--color-info);
+        box-shadow: 0 4px 12px rgba(var(--color-info-rgb), 0.4);
+    }
+
+    .metric-info {
+        flex: 1;
+    }
+
+    .metric-info h3 {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
+        margin: 0 0 var(--space-2) 0;
+    }
+
+    .metric-info p {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+
+    .trend-indicator {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        margin-top: var(--space-2);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+    }
+
+    .trend-indicator.positive {
+        background: rgba(var(--color-success-rgb), 0.2);
+        color: var(--color-success);
     }
 
     /* Filters Section */
     .filters-section {
-        position: relative;
-        z-index: 3;
-        padding: var(--space-6);
-        max-width: 1200px;
-        margin: 0 auto;
+        margin-bottom: var(--space-16);
     }
 
-    .stats-container {
-        display: flex;
-        gap: var(--space-4);
-        margin-bottom: var(--space-6);
-    }
-
-    .stat-card {
-        flex: 1;
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-4);
+    .filters-container {
         background: rgba(var(--color-surface-dark-rgb), 0.6);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-lg);
-        backdrop-filter: blur(10px);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-8);
+        backdrop-filter: blur(var(--blur-sm));
     }
 
-    .stat-icon {
-        font-size: 1.5rem;
-        color: var(--color-accent);
-    }
-
-    .stat-info {
-        display: flex;
-        flex-direction: column;
-    }
-
-    .stat-value {
-        font-size: var(--font-size-xl);
-        font-weight: var(--font-weight-bold);
-        color: var(--color-text-dark);
-        line-height: 1;
-    }
-
-    .stat-label {
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: var(--letter-spacing-wide);
-    }
-
-    .filter-controls {
-        display: flex;
-        gap: var(--space-3);
-        flex-wrap: wrap;
+    .search-field {
+        margin-bottom: var(--space-6);
     }
 
     .search-box {
         position: relative;
-        flex: 1;
-        min-width: 280px;
+        max-width: 500px;
     }
 
     .search-icon {
         position: absolute;
-        left: var(--space-3);
+        left: var(--space-4);
         top: 50%;
         transform: translateY(-50%);
         color: var(--color-text-muted);
-        font-size: 1.125rem;
+        font-size: var(--font-size-lg);
+        z-index: 1;
     }
 
-    .search-input {
+    .search-input.premium {
         width: 100%;
-        padding: var(--space-3) var(--space-3) var(--space-3) 2.5rem;
-        background: rgba(var(--color-primary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+        padding: var(--space-4) var(--space-4) var(--space-4) var(--space-12);
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
+        border: var(--border-2) solid rgba(var(--color-primary-rgb), 0.4);
         border-radius: var(--radius-lg);
         color: var(--color-text-dark);
         font-size: var(--font-size-sm);
-        transition: var(--transition-all);
+        transition: var(--transition-medium);
     }
 
-    .search-input:focus {
+    .search-input.premium:focus {
         outline: none;
-        border-color: rgba(var(--color-primary-rgb), 0.5);
-        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
     }
 
-    .search-input::placeholder {
+    .search-input.premium::placeholder {
         color: var(--color-text-muted);
     }
 
-    .category-filter,
-    .sort-select {
-        padding: var(--space-3) var(--space-4);
-        background: rgba(var(--color-primary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-lg);
-        color: var(--color-text-dark);
-        font-size: var(--font-size-sm);
-        cursor: pointer;
-        transition: var(--transition-all);
-        min-width: 160px;
+    .filter-controls {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: var(--space-6);
     }
 
-    .category-filter:focus,
-    .sort-select:focus {
-        outline: none;
-        border-color: rgba(var(--color-primary-rgb), 0.5);
-        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+    .filter-field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
     }
 
-    /* Components Container */
-    .components-container {
-        position: relative;
-        z-index: 3;
-        padding: 0 var(--space-6) var(--space-6);
-        max-width: 1200px;
-        margin: 0 auto;
-    }
-
-    .empty-state {
-        text-align: center;
-        padding: var(--space-20) var(--space-6);
-    }
-
-    .empty-icon {
-        font-size: 4rem;
-        color: var(--color-text-muted);
-        opacity: 0.5;
-        margin-bottom: var(--space-6);
-    }
-
-    .empty-state h3 {
-        margin: 0 0 var(--space-2) 0;
-        font-size: var(--font-size-xl);
-        color: var(--color-text-dark);
-    }
-
-    .empty-state p {
-        margin: 0 0 var(--space-8) 0;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-sm);
-    }
-
-    .cta-btn {
-        display: inline-flex;
+    .filter-label {
+        display: flex;
         align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-3) var(--space-6);
-        background: var(--color-primary);
-        color: var(--color-white);
+        gap: var(--space-3);
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-dark);
+    }
+
+    .filter-label svg {
+        font-size: var(--font-size-md);
+        color: var(--color-primary);
+    }
+
+    .filter-select.premium {
+        width: 100%;
+        padding: var(--space-4) var(--space-5);
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
+        border: var(--border-2) solid rgba(var(--color-primary-rgb), 0.4);
+        border-radius: var(--radius-lg);
+        color: var(--color-text-dark);
+        font-size: var(--font-size-sm);
+        transition: var(--transition-medium);
+        cursor: pointer;
+    }
+
+    .filter-select.premium:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
+    }
+
+    .filter-select.premium option {
+        background: var(--color-surface-dark);
+        color: var(--color-text-dark);
+    }
+
+    /* Collection Section */
+    .collection-section {
+        margin-bottom: var(--space-16);
+    }
+
+    /* Empty State */
+    .empty-state {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding: var(--space-16) var(--space-8);
+        text-align: center;
+    }
+
+    .empty-visual {
+        width: 120px;
+        height: 120px;
+        background: rgba(var(--color-primary-rgb), 0.1);
+        border-radius: var(--radius-2xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-6xl);
+        color: var(--color-secondary-500);
+        margin-bottom: var(--space-8);
+    }
+
+    .empty-content h3 {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
+        margin: 0 0 var(--space-3) 0;
+    }
+
+    .empty-content p {
+        font-size: var(--font-size-md);
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-8) 0;
+        line-height: var(--line-height-relaxed);
+        max-width: 400px;
+    }
+
+    .empty-action {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-4) var(--space-8);
+        background: var(--gradient-primary);
         border: none;
         border-radius: var(--radius-lg);
+        color: var(--color-white);
         font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-md);
         cursor: pointer;
-        transition: var(--transition-all);
-    }
-
-    .cta-btn:hover {
-        background: var(--color-primary-light);
-        transform: translateY(-2px);
+        transition: var(--transition-medium);
         box-shadow: var(--shadow-primary);
     }
 
+    .empty-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.4);
+    }
+
+    /* Components Grid */
     .components-grid {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
         gap: var(--space-6);
     }
 
-    /* Modal */
-    .modal-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0, 0, 0, 0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
+    /* Enhanced Modal Styles */
+    .modal-form-container {
         padding: var(--space-4);
     }
 
-    .modal-content {
-        background: var(--color-surface-dark);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-xl);
-        width: 100%;
-        max-width: 500px;
-        max-height: 90vh;
-        overflow-y: auto;
-        backdrop-filter: blur(20px);
-    }
-
-    .modal-header {
+    .form-section {
         display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--space-6);
-        border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.1);
+        flex-direction: column;
+        gap: var(--space-6);
     }
 
-    .modal-header h2 {
-        margin: 0;
-        font-size: var(--font-size-xl);
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .field-label {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
         font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-sm);
         color: var(--color-text-dark);
     }
 
-    .close-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border: none;
-        border-radius: var(--radius-md);
-        color: var(--color-text-dark);
-        cursor: pointer;
-        transition: var(--transition-all);
-    }
-
-    .close-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.2);
+    .field-label svg {
+        font-size: var(--font-size-md);
         color: var(--color-primary);
     }
 
-    .modal-body {
-        padding: var(--space-6);
-    }
-
-    .form-group {
-        margin-bottom: var(--space-4);
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: var(--space-2);
-        font-weight: var(--font-weight-medium);
-        font-size: var(--font-size-sm);
-        color: var(--color-text-dark);
-    }
-
-    .form-input,
-    .form-select,
-    .form-textarea {
+    .field-select,
+    .field-input,
+    .field-textarea {
         width: 100%;
-        padding: var(--space-3);
-        background: rgba(var(--color-primary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-md);
+        padding: var(--space-4) var(--space-5);
+        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.3);
+        border-radius: var(--radius-lg);
         color: var(--color-text-dark);
         font-size: var(--font-size-sm);
-        transition: var(--transition-all);
+        transition: var(--transition-medium);
+        backdrop-filter: blur(var(--blur-sm));
+        resize: vertical;
     }
 
-    .form-input:focus,
-    .form-select:focus,
-    .form-textarea:focus {
+    .field-select.premium,
+    .field-input.premium,
+    .field-textarea.premium {
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
+        border: var(--border-2) solid rgba(var(--color-primary-rgb), 0.4);
+    }
+
+    .field-select:focus,
+    .field-input:focus,
+    .field-textarea:focus {
         outline: none;
-        border-color: rgba(var(--color-primary-rgb), 0.5);
-        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
+        background: rgba(var(--color-surface-dark-rgb), 0.9);
     }
 
-    .form-input::placeholder,
-    .form-textarea::placeholder {
+    .field-select option {
+        background: var(--color-surface-dark);
+        color: var(--color-text-dark);
+    }
+
+    .field-input::placeholder,
+    .field-textarea::placeholder {
         color: var(--color-text-muted);
     }
 
-    .url-input-group {
+    /* Input Group */
+    .input-group.premium {
         display: flex;
-        gap: var(--space-2);
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
+        border: var(--border-2) solid rgba(var(--color-primary-rgb), 0.4);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        transition: var(--transition-medium);
     }
 
-    .fetch-btn {
+    .input-group.premium:focus-within {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
+    }
+
+    .input-group.premium .field-input {
+        border: none;
+        background: transparent;
+        flex: 1;
+    }
+
+    .input-group.premium .field-input:focus {
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .input-action {
+        width: 48px;
+        height: 48px;
+        background: var(--color-primary);
+        border: none;
+        color: var(--color-white);
+        cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
-        background: var(--color-primary);
-        border: none;
-        border-radius: var(--radius-md);
-        color: var(--color-white);
-        cursor: pointer;
-        transition: var(--transition-all);
+        transition: var(--transition-medium);
+        font-size: var(--font-size-lg);
     }
 
-    .fetch-btn:hover:not(:disabled) {
-        background: var(--color-primary-light);
+    .input-action:hover:not(:disabled) {
+        background: var(--color-primary-dark);
     }
 
-    .fetch-btn:disabled {
-        opacity: var(--opacity-50);
+    .input-action:disabled {
+        opacity: var(--opacity-60);
         cursor: not-allowed;
     }
 
-    .spin {
+    .loading-spin {
         animation: spin 1s linear infinite;
     }
 
@@ -828,114 +1157,220 @@
         }
     }
 
+    /* Product Preview */
+    .product-preview {
+        background: rgba(var(--color-success-rgb), 0.1);
+        border: var(--border-thin) solid rgba(var(--color-success-rgb), 0.3);
+        border-radius: var(--radius-lg);
+        padding: var(--space-6);
+        margin-bottom: var(--space-6);
+    }
+
     .preview-header {
         display: flex;
         align-items: center;
-        gap: var(--space-2);
-        margin-bottom: var(--space-3);
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
+        color: var(--color-success);
         font-weight: var(--font-weight-semibold);
-        color: var(--color-primary);
+        font-size: var(--font-size-sm);
+        padding-bottom: var(--space-3);
+        border-bottom: var(--border-thin) solid rgba(var(--color-success-rgb), 0.2);
     }
 
-    .preview-content p {
-        margin: var(--space-2) 0;
+    .preview-header svg {
+        font-size: var(--font-size-xl);
+    }
+
+    .preview-details {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+        margin-bottom: var(--space-4);
+    }
+
+    .detail-row {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+    }
+
+    .detail-row.specs {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: var(--space-2);
+    }
+
+    .detail-label {
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-muted);
+        min-width: 60px;
         font-size: var(--font-size-sm);
+    }
+
+    .detail-value {
         color: var(--color-text-dark);
+        font-size: var(--font-size-sm);
+        flex: 1;
+    }
+
+    .detail-value.price {
+        color: var(--color-success);
+        font-weight: var(--font-weight-bold);
     }
 
     .specs-preview {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--space-1);
-        margin-top: var(--space-2);
+        gap: var(--space-2);
+    }
+
+    .preview-spec {
+        background: rgba(var(--color-success-rgb), 0.2);
+        color: var(--color-success-light);
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+        border: var(--border-thin) solid rgba(var(--color-success-rgb), 0.3);
+    }
+
+    .spec-more {
+        background: rgba(var(--color-text-muted-rgb), 0.2);
+        color: var(--color-text-muted);
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+        border: var(--border-thin) solid rgba(var(--color-text-muted-rgb), 0.3);
     }
 
     .toggle-manual-btn {
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        padding: var(--space-2) var(--space-3);
-        background: rgba(var(--color-secondary-rgb), 0.1);
-        border: 1px solid rgba(var(--color-secondary-rgb), 0.3);
+        padding: var(--space-2) var(--space-4);
+        background: rgba(var(--color-info-rgb), 0.1);
+        border: var(--border-thin) solid rgba(var(--color-info-rgb), 0.3);
         border-radius: var(--radius-md);
-        color: var(--color-text-dark);
+        color: var(--color-info);
         cursor: pointer;
-        transition: var(--transition-all);
-        font-size: var(--font-size-xs);
+        transition: var(--transition-medium);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-medium);
+        align-self: flex-start;
     }
 
     .toggle-manual-btn:hover {
-        background: rgba(var(--color-secondary-rgb), 0.2);
-        color: var(--color-text-dark);
+        background: rgba(var(--color-info-rgb), 0.2);
+        transform: translateY(-1px);
     }
 
-    .cancel-btn,
-    .confirm-btn {
-        padding: var(--space-3) var(--space-4);
-        border-radius: var(--radius-md);
-        font-weight: var(--font-weight-medium);
-        cursor: pointer;
-        transition: var(--transition-all);
-        font-size: var(--font-size-sm);
-    }
-
-    .cancel-btn {
-        background: rgba(var(--color-secondary-rgb), 0.1);
-        border: 1px solid rgba(var(--color-secondary-rgb), 0.3);
-        color: var(--color-text-muted);
-    }
-
-    .cancel-btn:hover {
-        background: rgba(var(--color-secondary-rgb), 0.2);
-        color: var(--color-text-dark);
-    }
-
-    .confirm-btn {
+    /* Manual Fields */
+    .manual-fields {
         display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        background: var(--color-primary);
-        border: 1px solid var(--color-primary);
-        color: var(--color-white);
+        flex-direction: column;
+        gap: var(--space-6);
     }
 
-    .confirm-btn:hover:not(:disabled) {
-        background: var(--color-primary-light);
-        border-color: var(--color-primary-light);
-    }
+    /* Responsive Design */
+    @media (max-width: var(--breakpoint-lg)) {
+        .dashboard {
+            padding: var(--space-8) var(--space-6);
+        }
 
-    .confirm-btn:disabled {
-        opacity: var(--opacity-50);
-        cursor: not-allowed;
-    }
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-        .stats-container {
+        .header-main {
             flex-direction: column;
+            align-items: flex-start;
+            gap: var(--space-6);
+        }
+
+        .page-identity {
+            width: 100%;
+        }
+
+        .components-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
         }
 
         .filter-controls {
-            flex-direction: column;
+            grid-template-columns: 1fr;
+        }
+    }
+
+    @media (max-width: var(--breakpoint-md)) {
+
+        .header-content,
+        .dashboard {
+            padding-left: var(--space-4);
+            padding-right: var(--space-4);
         }
 
-        .search-box {
-            min-width: auto;
+        .breadcrumb {
+            margin-bottom: var(--space-4);
+        }
+
+        .page-avatar {
+            width: 48px;
+            height: 48px;
+            font-size: var(--font-size-2xl);
+        }
+
+        .page-name {
+            font-size: var(--font-size-2xl);
+        }
+
+        .action-primary span {
+            display: none;
         }
 
         .components-grid {
             grid-template-columns: 1fr;
         }
 
-        .header-content {
-            flex-wrap: wrap;
-            gap: var(--space-3);
+        .search-box {
+            max-width: none;
+        }
+
+        .filters-container {
+            padding: var(--space-6);
         }
     }
 
-    @media (max-width: 480px) {
-        .modal-overlay {
-            padding: var(--space-2);
+    @media (max-width: var(--breakpoint-sm)) {
+        .metrics-grid {
+            gap: var(--space-4);
+        }
+
+        .metric-card {
+            padding: var(--space-6);
+        }
+
+        .empty-visual {
+            width: 80px;
+            height: 80px;
+            font-size: var(--font-size-4xl);
+        }
+
+        .empty-content h3 {
+            font-size: var(--font-size-xl);
+        }
+
+        .filter-controls {
+            gap: var(--space-4);
+        }
+
+        .input-group.premium {
+            flex-direction: column;
+        }
+
+        .input-action {
+            width: 100%;
+            height: 40px;
         }
     }
 </style>

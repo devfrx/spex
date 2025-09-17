@@ -427,6 +427,17 @@
     --gradient-glass: linear-gradient(135deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.05));
 }
 
+.form-checkbox {
+    width: var(--space-5);
+    height: var(--space-5);
+    border-radius: var(--radius-xl);
+    border: none;
+    background-color: var(--color-white);
+    cursor: pointer;
+    transition: var(--transition-all);
+    accent-color: var(--color-primary);
+}
+
 /* DARK MODE VARIABLES */
 @media (prefers-color-scheme: dark) {
     :root {

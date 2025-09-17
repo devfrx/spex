@@ -41,9 +41,20 @@ const pinia = createPinia();
 pinia.use(piniaPluginPersistedstate);
 
 const app = createApp(App).use(IonicVue).use(router).use(pinia);
-
+app.config.devtools = true;
 app.component("Icon", Icon);
 
 router.isReady().then(() => {
   app.mount("#app");
+
+  import("./stores/useBuildsStore").then(({ useBuildsStore }) => {
+    const buildsStore = useBuildsStore();
+    buildsStore.migrateLegacyBuilds();
+
+    // Riallinea i riferimenti dopo il restore persistito
+    import("./stores/useComponentsStore").then(({ useComponentsStore }) => {
+      const componentsStore = useComponentsStore();
+      buildsStore.rehydrateComponentReferences(componentsStore.components);
+    });
+  });
 });

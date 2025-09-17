@@ -2,100 +2,249 @@
     <ion-page>
         <ion-content>
             <div class="builds-page">
-                <!-- Background Grid Animation -->
-                <div class="bg-grid"></div>
-                <div class="bg-overlay"></div>
+                <!-- Animated Background -->
+                <div class="bg-mesh"></div>
+                <div class="bg-gradient"></div>
 
-                <!-- Header -->
+                <!-- Premium Header -->
                 <header class="page-header">
                     <div class="header-content">
-                        <button @click="goBack" class="back-btn">
-                            <Icon icon="mdi:arrow-left" width="24" height="24" />
-                        </button>
-                        <div class="header-info">
-                            <h1>Build PC Collection</h1>
-                            <p>Configura e gestisci i tuoi sistemi personalizzati</p>
+                        <nav class="breadcrumb">
+                            <button @click="goBack" class="breadcrumb-item">
+                                <Icon icon="mdi:chevron-left" />
+                                <span>Home</span>
+                            </button>
+                            <Icon icon="mdi:chevron-right" class="breadcrumb-separator" />
+                            <span class="breadcrumb-current">Build Collection</span>
+                        </nav>
+
+                        <div class="header-main">
+                            <div class="page-identity">
+                                <div class="page-avatar">
+                                    <Icon icon="mdi:desktop-tower-monitor" />
+                                </div>
+                                <div class="page-meta">
+                                    <h1 class="page-name">Build PC Collection</h1>
+                                    <p class="page-description">Configura e gestisci i tuoi sistemi personalizzati</p>
+                                </div>
+                            </div>
+
+                            <div class="header-actions">
+                                <button @click="createNewBuild" class="action-primary">
+                                    <Icon icon="mdi:plus" />
+                                    <span>New Build</span>
+                                </button>
+                            </div>
                         </div>
-                        <button @click="createNewBuild" class="create-btn">
-                            <Icon icon="mdi:plus" width="20" height="20" />
-                            Nuova Build
-                        </button>
                     </div>
                 </header>
 
-                <!-- Stats Overview -->
-                <div class="stats-section">
-                    <div class="stats-container">
-                        <div class="stat-card">
-                            <Icon icon="mdi:desktop-tower-monitor" class="stat-icon" />
-                            <div class="stat-info">
-                                <span class="stat-value">{{ totalBuilds }}</span>
-                                <span class="stat-label">Build Totali</span>
+                <!-- Main Dashboard -->
+                <main class="dashboard">
+                    <!-- Performance Metrics -->
+                    <section class="metrics-section">
+                        <div class="section-header">
+                            <h2>Collection Overview</h2>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-card builds">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper">
+                                        <Icon icon="mdi:desktop-tower-monitor" />
+                                    </div>
+                                    <div class="metric-badge">{{ totalBuilds }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Total Builds</h3>
+                                    <p>Configured systems</p>
+                                </div>
+                            </div>
+
+                            <div class="metric-card budget">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper budget-icon">
+                                        <Icon icon="mdi:currency-eur" />
+                                    </div>
+                                    <div class="metric-badge budget-badge">€{{ totalValue.toFixed(0) }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Total Value</h3>
+                                    <p>Combined worth</p>
+                                </div>
+                            </div>
+
+                            <div class="metric-card average">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper average-icon">
+                                        <Icon icon="mdi:chart-line" />
+                                    </div>
+                                    <div class="metric-badge average-badge">€{{ avgValue.toFixed(0) }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Average Cost</h3>
+                                    <p>Per build</p>
+                                    <div class="trend-indicator positive">
+                                        <Icon icon="mdi:trending-up" />
+                                        <span>Professional grade</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <Icon icon="mdi:currency-eur" class="stat-icon" />
-                            <div class="stat-info">
-                                <span class="stat-value">€{{ totalValue.toFixed(0) }}</span>
-                                <span class="stat-label">Valore Totale</span>
+                    </section>
+
+                    <!-- Builds Collection -->
+                    <section class="collection-section">
+                        <div class="section-header">
+                            <h2>Your Builds</h2>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div v-if="builds.length === 0" class="empty-state">
+                            <div class="empty-visual">
+                                <Icon icon="mdi:desktop-tower" />
+                            </div>
+                            <div class="empty-content">
+                                <h3>No builds yet</h3>
+                                <p>Create your first custom PC configuration to get started</p>
+                                <button @click="createNewBuild" class="empty-action">
+                                    <Icon icon="mdi:plus" />
+                                    Create First Build
+                                </button>
                             </div>
                         </div>
-                        <div class="stat-card">
-                            <Icon icon="mdi:chart-line" class="stat-icon" />
-                            <div class="stat-info">
-                                <span class="stat-value">{{ avgValue.toFixed(0) }}€</span>
-                                <span class="stat-label">Valore Medio</span>
+
+                        <!-- Builds Grid -->
+                        <div v-else class="builds-grid">
+                            <!-- Create Build Card -->
+                            <div class="build-create-card" @click="createNewBuild">
+                                <div class="create-content">
+                                    <div class="create-icon-wrapper">
+                                        <Icon icon="mdi:plus-circle" />
+                                        <div class="icon-pulse"></div>
+                                    </div>
+                                    <h3>New Build</h3>
+                                    <p>Start a fresh configuration</p>
+                                </div>
+                            </div>
+
+                            <!-- Build Cards -->
+                            <div v-for="build in builds" :key="build.id" class="build-card" @click="openBuild(build)">
+                                <div class="card-glow"></div>
+
+                                <div class="card-header">
+                                    <div class="build-status" :class="getBuildStatusClass(build)">
+                                        <Icon :icon="getBuildStatusIcon(build)" class="status-icon" />
+                                        <span class="status-text">{{ getBuildStatus(build) }}</span>
+                                    </div>
+
+                                    <div class="card-actions">
+                                        <button @click.stop="editBuild(build)" class="action-btn" title="Edit">
+                                            <Icon icon="mdi:pencil" />
+                                        </button>
+                                        <button @click.stop="duplicateBuild(build)" class="action-btn"
+                                            title="Duplicate">
+                                            <Icon icon="mdi:content-copy" />
+                                        </button>
+                                        <button @click.stop="deleteBuild(build)" class="action-btn danger"
+                                            title="Delete">
+                                            <Icon icon="mdi:delete" />
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <div class="card-content">
+                                    <h3 class="build-name">{{ build.name }}</h3>
+                                    <p v-if="build.description" class="build-description">{{ build.description }}</p>
+
+                                    <div class="build-metrics">
+                                        <!-- <div class="metric">
+                                            <Icon icon="mdi:memory" class="metric-icon" />
+                                            <div class="metric-data">
+                                                <span class="metric-value">{{ getTotalComponents(build) }}</span>
+                                                <span class="metric-label">Components</span>
+                                            </div>
+                                        </div> -->
+
+                                        <div class="metric">
+                                            <Icon icon="mdi:currency-eur" class="metric-icon" />
+                                            <div class="metric-data">
+                                                <span class="metric-value">€{{ build.totalPrice.toFixed(0) }}</span>
+                                                <span class="metric-label">Total</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div class="progress-section">
+                                        <div class="progress-info">
+                                            <span class="progress-label">Completion</span>
+                                            <span class="progress-value">{{ getCompletionPercentage(build) }}%</span>
+                                        </div>
+                                        <div class="progress-bar">
+                                            <div class="progress-fill"
+                                                :style="{ width: `${getCompletionPercentage(build)}%` }"
+                                                :class="getBuildStatusClass(build)"></div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card-footer">
+                                    <div class="creation-date">
+                                        <Icon icon="mdi:calendar" class="date-icon" />
+                                        <span>{{ formatDate(build.createdAt) }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
+                    </section>
+                </main>
 
-                <!-- Builds Grid -->
-                <div class="builds-container">
-                    <div v-if="builds.length === 0" class="empty-state">
-                        <Icon icon="mdi:desktop-tower" class="empty-icon" />
-                        <h3>Nessuna Build Presente</h3>
-                        <p>Inizia creando la tua prima configurazione PC personalizzata</p>
-                        <button @click="createNewBuild" class="cta-btn">
-                            <Icon icon="mdi:plus" />
-                            Crea Prima Build
-                        </button>
-                    </div>
-
-                    <div v-else class="builds-grid">
-                        <!-- Create Build Card -->
-                        <BuildCard is-create-card @click="createNewBuild" />
-
-                        <!-- Existing Builds -->
-                        <BuildCard v-for="build in builds" :key="build.id" :build="build" @click="openBuild"
-                            @edit="editBuild" @duplicate="duplicateBuild" @delete="deleteBuild" />
-                    </div>
-                </div>
-
-                <!-- Create Build Modal -->
-                <BaseModal v-model="showCreateModal" title="Nuova Build PC" icon="mdi:desktop-tower-monitor" size="md"
-                    :confirm-disabled="!newBuildName.trim()" confirm-text="Crea Build" @confirm="confirmCreateBuild"
+                <!-- Enhanced Create Build Modal -->
+                <BaseModal v-model="showCreateModal" title="Create New Build" icon="mdi:desktop-tower-monitor" size="lg"
+                    :confirm-disabled="!newBuildName.trim()" confirm-text="Create Build" @confirm="confirmCreateBuild"
                     @cancel="closeCreateModal">
-                    <div class="form-group">
-                        <label>Nome Build</label>
-                        <input v-model="newBuildName" placeholder="es. Gaming Build RTX 5070" class="form-input"
-                            @keyup.enter="confirmCreateBuild" />
-                    </div>
 
-                    <div class="form-group">
-                        <label>Descrizione (opzionale)</label>
-                        <textarea v-model="newBuildDescription" placeholder="Descrivi la tua build personalizzata..."
-                            class="form-textarea" rows="3" />
-                    </div>
+                    <div class="modal-form-container">
+                        <div class="form-section">
+                            <div class="form-field">
+                                <label class="field-label">
+                                    <Icon icon="mdi:tag-outline" />
+                                    Build Name
+                                </label>
+                                <input v-model="newBuildName" placeholder="e.g. Gaming Build RTX 5070"
+                                    class="field-input premium" @keyup.enter="confirmCreateBuild" />
+                            </div>
 
-                    <div class="build-templates">
-                        <label>Template Rapidi</label>
-                        <div class="templates-grid">
-                            <button v-for="template in buildTemplates" :key="template.name"
-                                @click="applyTemplate(template)" class="template-btn">
-                                <Icon :icon="template.icon" class="template-icon" />
-                                <span>{{ template.name }}</span>
-                            </button>
+                            <div class="form-field">
+                                <label class="field-label">
+                                    <Icon icon="mdi:text" />
+                                    Description (Optional)
+                                </label>
+                                <textarea v-model="newBuildDescription"
+                                    placeholder="Describe your custom PC configuration..."
+                                    class="field-textarea premium" rows="3" />
+                            </div>
+
+                            <div class="form-field">
+                                <label class="field-label">
+                                    <Icon icon="mdi:lightning-bolt" />
+                                    Quick Templates
+                                </label>
+                                <div class="templates-grid">
+                                    <button v-for="template in buildTemplates" :key="template.name"
+                                        @click="applyTemplate(template)" class="template-card">
+                                        <div class="template-icon-wrapper">
+                                            <Icon :icon="template.icon" />
+                                        </div>
+                                        <div class="template-info">
+                                            <h4>{{ template.name }}</h4>
+                                            <p>{{ template.description }}</p>
+                                        </div>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </BaseModal>
@@ -241,10 +390,17 @@
     };
 
     const getCompletionPercentage = (build: PCBuild) => {
-        // Calcola la percentuale basata sui componenti essenziali
+        // Componenti essenziali da considerare (valori corrispondono a ComponentCategory)
         const essentialCategories = ['cpu', 'motherboard', 'memory', 'storage_primary', 'psu', 'case'];
-        const presentCategories = build.components.map(c => c.category);
-        const matches = essentialCategories.filter(cat => presentCategories.includes(cat as any));
+
+        if (!build || !build.componentsByCategory) return 0;
+
+        // Otteniamo solo le categorie effettivamente popolate nella build
+        const presentCategories = Object.entries(build.componentsByCategory)
+            .filter(([_, arr]) => Array.isArray(arr) && arr.length > 0)
+            .map(([key]) => key);
+
+        const matches = essentialCategories.filter(cat => presentCategories.includes(cat));
         return Math.round((matches.length / essentialCategories.length) * 100);
     };
 
@@ -263,312 +419,915 @@
         background: var(--color-bg-dark);
         color: var(--color-text-dark);
         position: relative;
-        overflow: hidden;
+        overflow-x: hidden;
     }
 
-    /* Background Effects */
-    .bg-grid {
+    /* Premium Background Effects */
+    .bg-mesh {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         background-image:
-            linear-gradient(rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px);
-        background-size: 60px 60px;
-        animation: gridMove 25s linear infinite;
-        z-index: 1;
+            radial-gradient(circle at 25% 25%, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(var(--color-accent-rgb), 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(var(--color-info-rgb), 0.1) 0%, transparent 70%);
+        z-index: var(--z-base);
     }
 
-    @keyframes gridMove {
-        0% {
-            transform: translate(0, 0);
-        }
-
-        100% {
-            transform: translate(60px, 60px);
-        }
-    }
-
-    .bg-overlay {
+    .bg-gradient {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(circle at 30% 20%,
-                rgba(var(--color-primary-rgb), 0.15) 0%,
-                transparent 50%),
-            radial-gradient(circle at 70% 80%,
-                rgba(var(--color-accent-rgb), 0.1) 0%,
-                transparent 50%);
-        z-index: 2;
+        background:
+            linear-gradient(135deg, rgba(var(--color-surface-dark-rgb), 0.95) 0%, rgba(var(--color-bg-dark-rgb), 0.98) 100%);
+        backdrop-filter: blur(var(--blur-lg));
+        z-index: calc(var(--z-base) + 1);
     }
 
-    /* Header */
+    /* Premium Header */
     .page-header {
-        position: relative;
-        z-index: 3;
-        background: rgba(var(--color-surface-dark-rgb), 0.8);
-        backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        padding: var(--space-6);
+        position: sticky;
+        top: 0;
+        z-index: var(--z-sticky);
+        background: rgba(var(--color-bg-dark-rgb), 0.85);
+        backdrop-filter: blur(var(--blur-lg));
+        border-bottom: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        padding: var(--space-8) 0;
     }
 
     .header-content {
-        display: flex;
-        align-items: center;
-        gap: var(--space-4);
-        max-width: 1200px;
+        position: relative;
+        z-index: calc(var(--z-base) + 2);
+        max-width: var(--container-2xl);
         margin: 0 auto;
+        padding: 0 var(--space-8);
     }
 
-    .back-btn,
-    .create-btn {
+    .breadcrumb {
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        padding: var(--space-3) var(--space-4);
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.3);
-        border-radius: var(--radius-lg);
-        color: var(--color-primary-light);
-        text-decoration: none;
-        transition: var(--transition-all);
-        cursor: pointer;
+        margin-bottom: var(--space-6);
         font-size: var(--font-size-sm);
+    }
+
+    .breadcrumb-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) 0;
+        background: none;
+        border: none;
+        color: var(--color-text-muted);
+        cursor: pointer;
+        transition: var(--transition-fast);
+        text-decoration: none;
+    }
+
+    .breadcrumb-item:hover {
+        color: var(--color-text-dark);
+    }
+
+    .breadcrumb-separator {
+        color: var(--color-secondary-500);
+        font-size: var(--font-size-md);
+    }
+
+    .breadcrumb-current {
+        color: var(--color-primary);
         font-weight: var(--font-weight-medium);
     }
 
-    .back-btn:hover,
-    .create-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.2);
-        border-color: rgba(var(--color-primary-rgb), 0.5);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-primary);
+    .header-main {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-8);
     }
 
-    .header-info {
+    .page-identity {
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
         flex: 1;
     }
 
-    .header-info h1 {
-        margin: 0 0 var(--space-1) 0;
-        font-size: var(--font-size-2xl);
+    .page-avatar {
+        width: var(--space-16);
+        height: var(--space-16);
+        background: var(--gradient-primary);
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-3xl);
+        color: var(--color-white);
+        box-shadow: 0 10px 25px rgba(var(--color-primary-rgb), 0.3);
+    }
+
+    .page-meta {
+        flex: 1;
+    }
+
+    .page-name {
+        font-size: var(--font-size-4xl);
         font-weight: var(--font-weight-bold);
-        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        margin: 0 0 var(--space-2) 0;
+        background: linear-gradient(135deg, var(--color-text-dark), var(--color-text-muted));
         background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        line-height: var(--line-height-tight);
     }
 
-    .header-info p {
-        margin: 0;
+    .page-description {
+        font-size: var(--font-size-md);
         color: var(--color-text-muted);
-        font-size: var(--font-size-sm);
+        margin: 0;
+        line-height: var(--line-height-normal);
     }
 
-    /* Stats Section */
-    .stats-section {
-        position: relative;
-        z-index: 3;
-        padding: var(--space-6);
-    }
-
-    .stats-container {
+    .header-actions {
         display: flex;
         gap: var(--space-4);
-        max-width: 1200px;
-        margin: 0 auto;
     }
 
-    .stat-card {
-        flex: 1;
+    .action-primary {
         display: flex;
         align-items: center;
         gap: var(--space-3);
-        padding: var(--space-4);
-        background: rgba(var(--color-surface-dark-rgb), 0.6);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+        padding: var(--space-3) var(--space-6);
+        background: var(--gradient-primary);
+        border: none;
         border-radius: var(--radius-lg);
-        backdrop-filter: blur(10px);
+        color: var(--color-white);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: var(--transition-medium);
+        box-shadow: var(--shadow-primary);
     }
 
-    .stat-icon {
-        font-size: 1.5rem;
-        color: var(--color-accent);
+    .action-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.5);
     }
 
-    .stat-info {
+    /* Dashboard Layout */
+    .dashboard {
+        position: relative;
+        z-index: calc(var(--z-base) + 2);
+        max-width: var(--container-2xl);
+        margin: 0 auto;
+        padding: var(--space-12) var(--space-8);
+    }
+
+    /* Section Headers */
+    .section-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
+        margin-bottom: var(--space-10);
+    }
+
+    .section-header h2 {
+        font-size: var(--font-size-3xl);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-text-dark);
+        margin: 0;
+    }
+
+    .section-divider {
+        flex: 1;
+        height: 2px;
+        background: linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.6), transparent);
+        border-radius: var(--radius-full);
+    }
+
+    /* Premium Metrics */
+    .metrics-section {
+        margin-bottom: var(--space-16);
+    }
+
+    .metrics-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: var(--space-8);
+    }
+
+    .metric-card {
+        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-8);
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
+        transition: var(--transition-medium);
+        backdrop-filter: blur(var(--blur-sm));
+        position: relative;
+        overflow: hidden;
+    }
+
+    .metric-card::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 3px;
+        background: var(--gradient-primary);
+        opacity: var(--opacity-80);
+    }
+
+    .metric-card:hover {
+        transform: translateY(-4px);
+        border-color: rgba(var(--color-primary-rgb), 0.4);
+        box-shadow: 0 20px 40px rgba(var(--color-primary-rgb), 0.2);
+    }
+
+    .metric-card.budget::before {
+        background: linear-gradient(90deg, var(--color-success-dark), var(--color-success));
+    }
+
+    .metric-card.average::before {
+        background: linear-gradient(90deg, var(--color-info), var(--color-accent));
+    }
+
+    .metric-visual {
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .metric-icon-wrapper {
+        width: 60px;
+        height: 60px;
+        background: rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-3xl);
+        color: var(--color-primary);
+    }
+
+    .metric-icon-wrapper.budget-icon {
+        background: rgba(var(--color-success-rgb), 0.2);
+        color: var(--color-success);
+    }
+
+    .metric-icon-wrapper.average-icon {
+        background: rgba(var(--color-info-rgb), 0.2);
+        color: var(--color-info);
+    }
+
+    .metric-badge {
+        position: absolute;
+        top: -8px;
+        right: -8px;
+        background: var(--color-primary);
+        color: var(--color-white);
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-lg);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.4);
+    }
+
+    .metric-badge.budget-badge {
+        background: var(--color-success);
+        box-shadow: 0 4px 12px rgba(var(--color-success-rgb), 0.4);
+    }
+
+    .metric-badge.average-badge {
+        background: var(--color-info);
+        box-shadow: 0 4px 12px rgba(var(--color-info-rgb), 0.4);
+    }
+
+    .metric-info {
+        flex: 1;
+    }
+
+    .metric-info h3 {
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
+        margin: 0 0 var(--space-2) 0;
+    }
+
+    .metric-info p {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+
+    .trend-indicator {
+        display: flex;
+        align-items: center;
+        gap: var(--space-1);
+        margin-top: var(--space-2);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+    }
+
+    .trend-indicator.positive {
+        background: rgba(var(--color-success-rgb), 0.2);
+        color: var(--color-success);
+    }
+
+    /* Collection Section */
+    .collection-section {
+        margin-bottom: var(--space-16);
+    }
+
+    /* Empty State */
+    .empty-state {
         display: flex;
         flex-direction: column;
+        align-items: center;
+        padding: var(--space-16) var(--space-8);
+        text-align: center;
     }
 
-    .stat-value {
+    .empty-visual {
+        width: 120px;
+        height: 120px;
+        background: rgba(var(--color-primary-rgb), 0.1);
+        border-radius: var(--radius-2xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-6xl);
+        color: var(--color-secondary-500);
+        margin-bottom: var(--space-8);
+    }
+
+    .empty-content h3 {
+        font-size: var(--font-size-2xl);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
+        margin: 0 0 var(--space-3) 0;
+    }
+
+    .empty-content p {
+        font-size: var(--font-size-md);
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-8) 0;
+        line-height: var(--line-height-relaxed);
+        max-width: 400px;
+    }
+
+    .empty-action {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-4) var(--space-8);
+        background: var(--gradient-primary);
+        border: none;
+        border-radius: var(--radius-lg);
+        color: var(--color-white);
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-md);
+        cursor: pointer;
+        transition: var(--transition-medium);
+        box-shadow: var(--shadow-primary);
+    }
+
+    .empty-action:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.4);
+    }
+
+    /* Builds Grid */
+    .builds-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: var(--space-6);
+    }
+
+    /* Create Build Card */
+    .build-create-card {
+        background: rgba(var(--color-surface-dark-rgb), 0.4);
+        border: 2px dashed rgba(var(--color-primary-rgb), 0.3);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-8);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        transition: var(--transition-medium);
+        min-height: 280px;
+    }
+
+    .build-create-card:hover {
+        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        border-color: rgba(var(--color-primary-rgb), 0.5);
+        transform: translateY(-4px);
+        box-shadow: 0 12px 32px rgba(var(--color-primary-rgb), 0.15);
+    }
+
+    .create-content {
+        text-align: center;
+    }
+
+    .create-icon-wrapper {
+        position: relative;
+        width: 80px;
+        height: 80px;
+        background: rgba(var(--color-primary-rgb), 0.15);
+        border-radius: var(--radius-xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto var(--space-6) auto;
+        font-size: var(--font-size-5xl);
+        color: var(--color-primary);
+    }
+
+    .icon-pulse {
+        position: absolute;
+        inset: -4px;
+        background: linear-gradient(45deg, var(--color-primary), var(--color-accent));
+        border-radius: var(--radius-xl);
+        opacity: 0;
+        z-index: -1;
+        animation: iconPulse 2s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+
+        0%,
+        100% {
+            opacity: 0;
+            transform: scale(1);
+        }
+
+        50% {
+            opacity: 0.3;
+            transform: scale(1.1);
+        }
+    }
+
+    .create-content h3 {
         font-size: var(--font-size-xl);
-        font-weight: var(--font-weight-bold);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
+        margin: 0 0 var(--space-2) 0;
+    }
+
+    .create-content p {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        margin: 0;
+    }
+
+    /* Build Cards */
+    .build-card {
+        position: relative;
+        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-2xl);
+        overflow: hidden;
+        cursor: pointer;
+        transition: var(--transition-medium);
+        backdrop-filter: blur(var(--blur-sm));
+    }
+
+    .build-card:hover {
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
+        border-color: rgba(var(--color-primary-rgb), 0.4);
+        transform: translateY(-4px);
+        box-shadow: 0 16px 40px rgba(var(--color-primary-rgb), 0.2);
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: var(--space-5);
+        border-bottom: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
+    }
+
+    .build-status {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-lg);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-semibold);
+        text-transform: uppercase;
+        letter-spacing: var(--letter-spacing-wide);
+    }
+
+    .build-status.status-complete {
+        background: rgba(var(--color-success-rgb), 0.2);
+        color: var(--color-success);
+    }
+
+    .build-status.status-almost {
+        background: rgba(var(--color-warning-rgb), 0.2);
+        color: var(--color-warning);
+    }
+
+    .build-status.status-progress {
+        background: rgba(var(--color-info-rgb), 0.2);
+        color: var(--color-info);
+    }
+
+    .build-status.status-started {
+        background: rgba(var(--color-secondary-rgb), 0.2);
+        color: var(--color-secondary);
+    }
+
+    .status-icon {
+        font-size: 1rem;
+    }
+
+    .card-actions {
+        display: flex;
+        gap: var(--space-1);
+    }
+
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        background: rgba(var(--color-primary-rgb), 0.1);
+        border: none;
+        border-radius: var(--radius-md);
+        color: var(--color-text-muted);
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: var(--transition-fast);
+        font-size: var(--font-size-sm);
+    }
+
+    .action-btn:hover {
+        background: rgba(var(--color-primary-rgb), 0.2);
+        color: var(--color-primary);
+        transform: translateY(-1px);
+    }
+
+    .action-btn.danger:hover {
+        background: rgba(var(--color-error-rgb), 0.2);
+        color: var(--color-error);
+    }
+
+    .card-content {
+        padding: var(--space-5);
+    }
+
+    .build-name {
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
+        margin: 0 0 var(--space-2) 0;
+        line-height: var(--line-height-tight);
+    }
+
+    .build-description {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-4) 0;
+        line-height: var(--line-height-relaxed);
+    }
+
+    .build-metrics {
+        display: flex;
+        gap: var(--space-4);
+        margin-bottom: var(--space-4);
+    }
+
+    .metric {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        flex: 1;
+    }
+
+    .metric-icon {
+        font-size: 1.125rem;
+        color: var(--color-accent);
+        flex-shrink: 0;
+    }
+
+    .metric-data {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
+    }
+
+    .metric-value {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
         color: var(--color-text-dark);
         line-height: 1;
     }
 
-    .stat-label {
+    .metric-label {
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
         text-transform: uppercase;
         letter-spacing: var(--letter-spacing-wide);
     }
 
-    /* Builds Container */
-    .builds-container {
-        position: relative;
-        z-index: 3;
-        padding: 0 var(--space-6) var(--space-6);
-        max-width: 1200px;
-        margin: 0 auto;
+    .progress-section {
+        margin: var(--space-4) 0;
     }
 
-    .empty-state {
-        text-align: center;
-        padding: var(--space-20) var(--space-6);
-    }
-
-    .empty-icon {
-        font-size: 4rem;
-        color: var(--color-text-muted);
-        opacity: 0.5;
-        margin-bottom: var(--space-6);
-    }
-
-    .empty-state h3 {
-        margin: 0 0 var(--space-2) 0;
-        font-size: var(--font-size-xl);
-        color: var(--color-text-dark);
-    }
-
-    .empty-state p {
-        margin: 0 0 var(--space-8) 0;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-sm);
-    }
-
-    .cta-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-3) var(--space-6);
-        background: var(--color-primary);
-        color: var(--color-white);
-        border: none;
-        border-radius: var(--radius-lg);
-        font-weight: var(--font-weight-semibold);
-        cursor: pointer;
-        transition: var(--transition-all);
-    }
-
-    .cta-btn:hover {
-        background: var(--color-primary-light);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-primary);
-    }
-
-    /* Builds Grid */
-    .builds-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-        gap: var(--space-4);
-    }
-
-    /* Modal */
-    .form-group {
+    .progress-info {
         display: flex;
-        flex-direction: column;
-        gap: var(--space-2);
-        margin-bottom: var(--space-6);
-    }
-
-    .form-input,
-    .form-textarea {
-        width: 100%;
-        padding: var(--space-3);
-        background: rgba(var(--color-primary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-md);
-        color: var(--color-text-dark);
-        font-size: var(--font-size-sm);
-        transition: var(--transition-all);
-    }
-
-    .form-input:focus,
-    .form-textarea:focus {
-        outline: none;
-        border-color: rgba(var(--color-primary-rgb), 0.5);
-        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
-    }
-
-    .form-input::placeholder,
-    .form-textarea::placeholder {
-        color: var(--color-text-muted);
-    }
-
-    .build-templates label {
-        display: block;
-        margin-bottom: var(--space-3);
-        font-weight: var(--font-weight-medium);
-        font-size: var(--font-size-sm);
-        color: var(--color-text-dark);
-    }
-
-    .templates-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: var(--space-2);
-    }
-
-    .template-btn {
-        display: flex;
-        flex-direction: column;
+        justify-content: space-between;
         align-items: center;
-        gap: var(--space-1);
-        padding: var(--space-3);
-        background: rgba(var(--color-primary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-md);
-        color: var(--color-text-dark);
-        cursor: pointer;
-        transition: var(--transition-all);
+        margin-bottom: var(--space-2);
+    }
+
+    .progress-label {
         font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: var(--letter-spacing-wide);
+        font-weight: var(--font-weight-medium);
     }
 
-    .template-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border-color: rgba(var(--color-primary-rgb), 0.4);
+    .progress-value {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-dark);
+        font-weight: var(--font-weight-semibold);
     }
 
-    .template-icon {
-        font-size: 1.25rem;
+    .progress-bar {
+        width: 100%;
+        height: 6px;
+        background: rgba(var(--color-secondary-rgb), 0.2);
+        border-radius: var(--radius-full);
+        overflow: hidden;
+    }
+
+    .progress-fill {
+        height: 100%;
+        transition: width var(--transition-slow);
+        border-radius: var(--radius-full);
+    }
+
+    .progress-fill.status-complete {
+        background: var(--color-success);
+    }
+
+    .progress-fill.status-almost {
+        background: var(--color-warning);
+    }
+
+    .progress-fill.status-progress {
+        background: var(--color-info);
+    }
+
+    .progress-fill.status-started {
+        background: var(--color-secondary);
+    }
+
+    .card-footer {
+        padding: var(--space-4) var(--space-5);
+        border-top: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
+    }
+
+    .creation-date {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        justify-content: flex-end;
+    }
+
+    .date-icon {
+        font-size: 0.875rem;
+    }
+
+    /* Enhanced Modal Styles */
+    .modal-form-container {
+        padding: var(--space-4);
+    }
+
+    .form-section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-6);
+    }
+
+    .form-field {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
+    }
+
+    .field-label {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        font-weight: var(--font-weight-semibold);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-dark);
+    }
+
+    .field-label svg {
+        font-size: var(--font-size-md);
         color: var(--color-primary);
     }
 
-    /* Responsive */
-    @media (max-width: 768px) {
-        .stats-container {
+    .field-input,
+    .field-textarea {
+        width: 100%;
+        padding: var(--space-4) var(--space-5);
+        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.3);
+        border-radius: var(--radius-lg);
+        color: var(--color-text-dark);
+        font-size: var(--font-size-sm);
+        transition: var(--transition-medium);
+        backdrop-filter: blur(var(--blur-sm));
+        resize: vertical;
+    }
+
+    .field-input.premium,
+    .field-textarea.premium {
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
+        border: var(--border-2) solid rgba(var(--color-primary-rgb), 0.4);
+    }
+
+    .field-input:focus,
+    .field-textarea:focus {
+        outline: none;
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
+        background: rgba(var(--color-surface-dark-rgb), 0.9);
+    }
+
+    .field-input::placeholder,
+    .field-textarea::placeholder {
+        color: var(--color-text-muted);
+    }
+
+    /* Templates Grid */
+    .templates-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: var(--space-3);
+    }
+
+    .template-card {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-4);
+        background: rgba(var(--color-primary-rgb), 0.08);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-lg);
+        cursor: pointer;
+        transition: var(--transition-all);
+        text-align: left;
+    }
+
+    .template-card:hover {
+        background: rgba(var(--color-primary-rgb), 0.15);
+        border-color: rgba(var(--color-primary-rgb), 0.4);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.2);
+    }
+
+    .template-icon-wrapper {
+        width: 40px;
+        height: 40px;
+        background: rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-md);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-lg);
+        color: var(--color-primary);
+        flex-shrink: 0;
+    }
+
+    .template-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .template-info h4 {
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
+        margin: 0 0 var(--space-1) 0;
+    }
+
+    .template-info p {
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+        margin: 0;
+        line-height: var(--line-height-tight);
+    }
+
+    /* Responsive Design */
+    @media (max-width: var(--breakpoint-lg)) {
+        .dashboard {
+            padding: var(--space-8) var(--space-6);
+        }
+
+        .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .header-main {
             flex-direction: column;
+            align-items: flex-start;
+            gap: var(--space-6);
+        }
+
+        .page-identity {
+            width: 100%;
+        }
+
+        .builds-grid {
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        }
+    }
+
+    @media (max-width: var(--breakpoint-md)) {
+
+        .header-content,
+        .dashboard {
+            padding-left: var(--space-4);
+            padding-right: var(--space-4);
+        }
+
+        .breadcrumb {
+            margin-bottom: var(--space-4);
+        }
+
+        .page-avatar {
+            width: 48px;
+            height: 48px;
+            font-size: var(--font-size-2xl);
+        }
+
+        .page-name {
+            font-size: var(--font-size-2xl);
+        }
+
+        .action-primary span {
+            display: none;
         }
 
         .builds-grid {
             grid-template-columns: 1fr;
         }
 
-        .header-content {
-            flex-wrap: wrap;
-            gap: var(--space-3);
-        }
-
         .templates-grid {
             grid-template-columns: 1fr;
         }
+
+        .build-metrics {
+            flex-direction: column;
+            gap: var(--space-3);
+        }
     }
 
-    @media (max-width: 480px) {}
+    @media (max-width: var(--breakpoint-sm)) {
+        .metrics-grid {
+            gap: var(--space-4);
+        }
+
+        .metric-card {
+            padding: var(--space-6);
+        }
+
+        .empty-visual {
+            width: 80px;
+            height: 80px;
+            font-size: var(--font-size-4xl);
+        }
+
+        .empty-content h3 {
+            font-size: var(--font-size-xl);
+        }
+
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--space-3);
+        }
+
+        .card-actions {
+            align-self: flex-end;
+        }
+    }
 </style>

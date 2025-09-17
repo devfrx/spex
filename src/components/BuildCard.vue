@@ -1,5 +1,4 @@
 <template>
-    <!-- Mantieni la stessa template ma aggiorna la metrica dei componenti -->
     <div class="build-card" :class="{
         'create-card': isCreateCard,
         'clickable': clickable
@@ -9,30 +8,30 @@
         <!-- Create Card Content -->
         <div v-if="isCreateCard" class="create-content">
             <div class="create-icon-wrapper">
-                <Icon icon="mdi:plus" class="create-icon" />
+                <Icon icon="mdi:plus-circle" class="create-icon" />
                 <div class="icon-pulse"></div>
             </div>
-            <h3>{{ createTitle || 'Nuova Build' }}</h3>
-            <p>{{ createDescription || 'Crea una configurazione personalizzata' }}</p>
+            <h3>{{ createTitle || 'New Build' }}</h3>
+            <p>{{ createDescription || 'Start a fresh configuration' }}</p>
         </div>
 
         <!-- Regular Build Card Content -->
         <template v-else-if="build">
             <div class="card-header">
-                <div class="build-status">
-                    <Icon :icon="buildStatusIcon" class="status-icon" :class="buildStatusClass" />
+                <div class="build-status" :class="buildStatusClass">
+                    <Icon :icon="buildStatusIcon" class="status-icon" />
                     <span class="status-text">{{ buildStatusText }}</span>
                 </div>
                 <div class="card-actions" v-if="showActions">
-                    <button v-if="canEdit" @click.stop="$emit('edit', build)" class="action-btn" title="Modifica">
+                    <button v-if="canEdit" @click.stop="$emit('edit', build)" class="action-btn" title="Edit">
                         <Icon icon="mdi:pencil" />
                     </button>
                     <button v-if="canDuplicate" @click.stop="$emit('duplicate', build)" class="action-btn"
-                        title="Duplica">
+                        title="Duplicate">
                         <Icon icon="mdi:content-copy" />
                     </button>
                     <button v-if="canDelete" @click.stop="$emit('delete', build)" class="action-btn danger"
-                        title="Elimina">
+                        title="Delete">
                         <Icon icon="mdi:delete" />
                     </button>
                 </div>
@@ -45,19 +44,23 @@
                 <div class="build-metrics">
                     <div class="metric">
                         <Icon icon="mdi:memory" class="metric-icon" />
-                        <span class="metric-value">{{ totalComponentsCount }}</span>
-                        <span class="metric-label">Componenti</span>
+                        <div class="metric-data">
+                            <span class="metric-value">{{ totalComponentsCount }}</span>
+                            <span class="metric-label">Components</span>
+                        </div>
                     </div>
                     <div class="metric">
                         <Icon icon="mdi:currency-eur" class="metric-icon" />
-                        <span class="metric-value">€{{ build.totalPrice.toFixed(0) }}</span>
-                        <span class="metric-label">Prezzo</span>
+                        <div class="metric-data">
+                            <span class="metric-value">€{{ build.totalPrice.toFixed(0) }}</span>
+                            <span class="metric-label">Total</span>
+                        </div>
                     </div>
                 </div>
 
                 <div class="progress-section">
                     <div class="progress-info">
-                        <span class="progress-label">Completamento</span>
+                        <span class="progress-label">Completion</span>
                         <span class="progress-value">{{ completionPercentage }}%</span>
                     </div>
                     <div class="progress-bar">
@@ -129,10 +132,10 @@
 
     const buildStatusText = computed(() => {
         const completion = completionPercentage.value;
-        if (completion === 100) return 'Completa';
-        if (completion >= 70) return 'Quasi Pronta';
-        if (completion > 0) return 'In Progresso';
-        return 'Iniziata';
+        if (completion === 100) return 'Complete';
+        if (completion >= 70) return 'Almost Done';
+        if (completion >= 30) return 'In Progress';
+        return 'Getting Started';
     });
 
     const buildStatusIcon = computed(() => {
@@ -166,16 +169,15 @@
     };
 </script>
 
-
 <style scoped>
     .build-card {
         position: relative;
-        background: rgba(var(--color-surface-dark-rgb), 0.8);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-xl);
+        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-2xl);
         overflow: hidden;
-        transition: var(--transition-all);
-        backdrop-filter: blur(20px);
+        transition: var(--transition-medium);
+        backdrop-filter: blur(var(--blur-sm));
     }
 
     .build-card.clickable {
@@ -183,17 +185,18 @@
     }
 
     .build-card:hover {
-        transform: translateY(-8px);
+        transform: translateY(-4px);
         border-color: rgba(var(--color-primary-rgb), 0.4);
-        box-shadow: 0 20px 40px rgba(var(--color-primary-rgb), 0.2);
+        box-shadow: 0 16px 40px rgba(var(--color-primary-rgb), 0.2);
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
     }
 
     .build-card:hover .card-glow {
-        opacity: 1;
+        opacity: var(--opacity-100);
     }
 
     .build-card:hover .icon-pulse {
-        animation: iconPulse 1s ease-in-out infinite;
+        animation: iconPulse 2s ease-in-out infinite;
     }
 
     .card-glow {
@@ -204,7 +207,7 @@
         height: 3px;
         background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
         opacity: 0;
-        transition: var(--transition-opacity);
+        transition: var(--transition-medium);
     }
 
     .create-card {
@@ -224,29 +227,34 @@
         justify-content: center;
         padding: var(--space-8);
         text-align: center;
-        min-height: 200px;
+        min-height: 280px;
     }
 
     .create-icon-wrapper {
         position: relative;
-        padding: var(--space-4);
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border-radius: var(--radius-lg);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        margin-bottom: var(--space-4);
+        width: 80px;
+        height: 80px;
+        background: rgba(var(--color-primary-rgb), 0.15);
+        border-radius: var(--radius-xl);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: var(--space-6);
+        font-size: var(--font-size-5xl);
+        color: var(--color-primary);
     }
 
     .create-icon {
-        font-size: 2rem;
+        font-size: var(--font-size-5xl);
         color: var(--color-primary);
         display: block;
     }
 
     .icon-pulse {
         position: absolute;
-        inset: -2px;
+        inset: -4px;
         background: linear-gradient(45deg, var(--color-primary), var(--color-accent));
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-xl);
         opacity: 0;
         z-index: -1;
     }
@@ -261,14 +269,15 @@
 
         50% {
             opacity: 0.3;
-            transform: scale(1.05);
+            transform: scale(1.1);
         }
     }
 
     .create-content h3 {
         margin: 0 0 var(--space-2) 0;
-        font-size: var(--font-size-lg);
-        color: var(--color-primary);
+        font-size: var(--font-size-xl);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
     }
 
     .create-content p {
@@ -281,39 +290,45 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: var(--space-4);
-        border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.1);
+        padding: var(--space-5);
+        background: rgba(var(--color-surface-dark-rgb), 0.4);
+        border-bottom: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
     }
 
     .build-status {
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        padding: var(--space-1) var(--space-3);
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border-radius: var(--radius-full);
+        padding: var(--space-2) var(--space-3);
+        border-radius: var(--radius-lg);
         font-size: var(--font-size-xs);
-        font-weight: var(--font-weight-medium);
+        font-weight: var(--font-weight-semibold);
+        text-transform: uppercase;
+        letter-spacing: var(--letter-spacing-wide);
     }
 
     .status-icon {
-        font-size: 0.875rem;
+        font-size: 1rem;
     }
 
     .status-complete {
+        background: rgba(var(--color-success-rgb), 0.2);
         color: var(--color-success);
     }
 
     .status-almost {
+        background: rgba(var(--color-warning-rgb), 0.2);
         color: var(--color-warning);
     }
 
     .status-progress {
+        background: rgba(var(--color-info-rgb), 0.2);
         color: var(--color-info);
     }
 
     .status-started {
-        color: var(--color-text-muted);
+        background: rgba(var(--color-secondary-rgb), 0.2);
+        color: var(--color-secondary);
     }
 
     .card-actions {
@@ -330,14 +345,16 @@
         background: rgba(var(--color-primary-rgb), 0.1);
         border: none;
         border-radius: var(--radius-md);
-        color: var(--color-text-dark);
+        color: var(--color-text-muted);
         cursor: pointer;
-        transition: var(--transition-all);
+        transition: var(--transition-fast);
+        font-size: var(--font-size-sm);
     }
 
     .action-btn:hover {
         background: rgba(var(--color-primary-rgb), 0.2);
         color: var(--color-primary);
+        transform: translateY(-1px);
     }
 
     .action-btn.danger:hover {
@@ -346,20 +363,21 @@
     }
 
     .card-content {
-        padding: var(--space-4);
+        padding: var(--space-5);
     }
 
     .build-name {
-        margin: 0 0 var(--space-2) 0;
         font-size: var(--font-size-lg);
         font-weight: var(--font-weight-semibold);
         color: var(--color-text-dark);
+        margin: 0 0 var(--space-2) 0;
+        line-height: var(--line-height-tight);
     }
 
     .build-description {
-        margin: 0 0 var(--space-4) 0;
-        color: var(--color-text-muted);
         font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        margin: 0 0 var(--space-4) 0;
         line-height: var(--line-height-relaxed);
     }
 
@@ -377,30 +395,29 @@
     }
 
     .metric-icon {
-        font-size: 1rem;
+        font-size: 1.125rem;
         color: var(--color-accent);
+        flex-shrink: 0;
+    }
+
+    .metric-data {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-1);
     }
 
     .metric-value {
         font-size: var(--font-size-sm);
         font-weight: var(--font-weight-semibold);
         color: var(--color-text-dark);
+        line-height: 1;
     }
 
     .metric-label {
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
-    }
-
-    .build-progress {
-        margin-bottom: var(--space-3);
-    }
-
-    .progress-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--space-2);
+        text-transform: uppercase;
+        letter-spacing: var(--letter-spacing-wide);
     }
 
     .progress-section {
@@ -420,31 +437,49 @@
         color: var(--color-text-muted);
         text-transform: uppercase;
         letter-spacing: var(--letter-spacing-wide);
+        font-weight: var(--font-weight-medium);
     }
 
     .progress-value {
         font-size: var(--font-size-xs);
+        color: var(--color-text-dark);
         font-weight: var(--font-weight-semibold);
-        color: var(--color-primary);
     }
 
     .progress-bar {
-        height: 4px;
-        background: rgba(var(--color-primary-rgb), 0.1);
+        width: 100%;
+        height: 6px;
+        background: rgba(var(--color-secondary-rgb), 0.2);
         border-radius: var(--radius-full);
         overflow: hidden;
     }
 
     .progress-fill {
         height: 100%;
-        background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
+        transition: width var(--transition-slow);
         border-radius: var(--radius-full);
-        transition: width 1s ease-out;
+    }
+
+    .progress-fill.status-complete {
+        background: var(--color-success);
+    }
+
+    .progress-fill.status-almost {
+        background: var(--color-warning);
+    }
+
+    .progress-fill.status-progress {
+        background: var(--color-info);
+    }
+
+    .progress-fill.status-started {
+        background: var(--color-secondary);
     }
 
     .card-footer {
-        padding: var(--space-4);
-        border-top: 1px solid rgba(var(--color-primary-rgb), 0.1);
+        padding: var(--space-4) var(--space-5);
+        background: rgba(var(--color-surface-dark-rgb), 0.4);
+        border-top: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
         display: flex;
         justify-content: flex-end;
     }
@@ -452,19 +487,56 @@
     .creation-date {
         display: flex;
         align-items: center;
-        gap: var(--space-1);
+        gap: var(--space-2);
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
     }
 
     .date-icon {
-        font-size: 0.75rem;
+        font-size: 0.875rem;
     }
 
-    @media (max-width: 480px) {
+    /* Responsive Design */
+    @media (max-width: var(--breakpoint-md)) {
         .build-metrics {
             flex-direction: column;
-            gap: var(--space-2);
+            gap: var(--space-3);
+        }
+
+        .card-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--space-3);
+        }
+
+        .card-actions {
+            align-self: flex-end;
+        }
+    }
+
+    @media (max-width: var(--breakpoint-sm)) {
+        .card-content {
+            padding: var(--space-4);
+        }
+
+        .card-header {
+            padding: var(--space-4);
+        }
+
+        .create-content {
+            padding: var(--space-6);
+            min-height: 240px;
+        }
+
+        .create-icon-wrapper {
+            width: 60px;
+            height: 60px;
+            font-size: var(--font-size-4xl);
+            margin-bottom: var(--space-4);
+        }
+
+        .create-icon {
+            font-size: var(--font-size-4xl);
         }
     }
 </style>

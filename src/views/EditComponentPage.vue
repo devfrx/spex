@@ -2,186 +2,73 @@
     <ion-page>
         <ion-content>
             <div class="edit-component-page">
-                <!-- Background Grid Animation -->
-                <div class="bg-grid"></div>
-                <div class="bg-overlay"></div>
+                <!-- Animated Background -->
+                <div class="bg-mesh"></div>
+                <div class="bg-gradient"></div>
 
-                <!-- Header -->
+                <!-- Premium Header -->
                 <header class="page-header">
                     <div class="header-content">
-                        <button @click="goBack" class="back-btn">
-                            <Icon icon="mdi:arrow-left" width="24" height="24" />
-                        </button>
-                        <div class="header-info">
-                            <h1>{{ isLoading ? 'Caricamento...' : 'Modifica Componente' }}</h1>
-                            <p v-if="component">{{ getCategoryName(component.category) }} - {{ component.model }}</p>
-                            <p v-else>Modifica le specifiche del componente selezionato</p>
-                        </div>
-                        <div class="header-actions">
-                            <button v-if="component && hasChanges" @click="showResetModal = true" class="reset-btn"
-                                title="Ripristina modifiche">
-                                <Icon icon="mdi:restore" />
-                                Ripristina
+                        <nav class="breadcrumb">
+                            <button @click="goBack" class="breadcrumb-item">
+                                <Icon icon="mdi:chevron-left" />
+                                <span>Components</span>
                             </button>
-                            <button @click="saveChanges" :disabled="!canSave || isSaving" class="save-btn"
-                                :class="{ 'loading': isSaving }">
-                                <Icon v-if="isSaving" icon="mdi:loading" class="spin" />
-                                <Icon v-else icon="mdi:content-save" />
-                                {{ isSaving ? 'Salvataggio...' : 'Salva' }}
-                            </button>
+                            <Icon icon="mdi:chevron-right" class="breadcrumb-separator" />
+                            <span class="breadcrumb-current">{{ component ? 'Edit Component' : 'Loading...' }}</span>
+                        </nav>
+
+                        <div class="header-main">
+                            <div class="component-identity">
+                                <div class="component-avatar">
+                                    <Icon icon="mdi:pencil-box" />
+                                </div>
+                                <div class="component-meta">
+                                    <h1 class="component-name">{{ component ? 'Edit Component' : 'Loading Component...'
+                                    }}</h1>
+                                    <p class="component-description">
+                                        {{ component ? `${getCategoryName(component.category)} - ${component.model}` :
+                                            'Modify component specifications and details' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="header-actions">
+                                <button v-if="component && hasChanges" @click="showResetModal = true"
+                                    class="action-secondary">
+                                    <Icon icon="mdi:restore" />
+                                    <span>Reset</span>
+                                </button>
+                                <button @click="saveChanges" :disabled="!canSave || isSaving" class="action-primary">
+                                    <Icon v-if="isSaving" icon="mdi:loading" class="loading-spin" />
+                                    <Icon v-else icon="mdi:content-save" />
+                                    <span>{{ isSaving ? 'Saving...' : 'Save' }}</span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </header>
 
-                <!-- Main Content -->
-                <div v-if="component" class="edit-container">
-                    <!-- Component Preview Card -->
-                    <div class="preview-section">
-                        <div class="section-header">
-                            <h2>Anteprima Componente</h2>
-                            <div class="header-line"></div>
-                        </div>
-
-                        <ComponentCard :component="previewComponent" :clickable="false" :show-actions="false"
-                            :show-date="false" />
-                    </div>
-
-                    <!-- Edit Form -->
-                    <div class="form-section">
-                        <div class="section-header">
-                            <h2>Dettagli Componente</h2>
-                            <div class="header-line"></div>
-                        </div>
-
-                        <div class="form-container">
-                            <!-- Basic Information -->
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <Icon icon="mdi:tag" class="label-icon" />
-                                    Categoria
-                                </label>
-                                <select v-model="editForm.category" class="form-select" :disabled="isLoading">
-                                    <option v-for="category in allCategories" :key="category" :value="category">
-                                        {{ getCategoryName(category) }}
-                                    </option>
-                                </select>
-                                <small class="form-hint">La categoria del componente nel sistema</small>
+                <!-- Main Dashboard -->
+                <main v-if="component" class="dashboard">
+                    <div class="dashboard-grid">
+                        <!-- Component Preview Section -->
+                        <section class="preview-section">
+                            <div class="section-header">
+                                <h2>Component Preview</h2>
+                                <div class="section-divider"></div>
                             </div>
 
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <Icon icon="mdi:cube-outline" class="label-icon" />
-                                    Nome Modello
-                                </label>
-                                <input v-model="editForm.model" type="text" class="form-input"
-                                    placeholder="es. AMD Ryzen 9 7900X" :disabled="isLoading" />
-                                <small class="form-hint">Nome completo del modello del componente</small>
+                            <div class="preview-container">
+                                <ComponentCard :component="previewComponent" :clickable="false" :show-actions="false"
+                                    :show-date="false" />
                             </div>
 
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <Icon icon="mdi:currency-eur" class="label-icon" />
-                                    Prezzo (€)
-                                </label>
-                                <input v-model.number="editForm.price" type="number" step="0.01" min="0"
-                                    class="form-input" placeholder="0.00" :disabled="isLoading" />
-                                <small class="form-hint">Prezzo attuale del componente</small>
-                            </div>
-
-                            <!-- Amazon Integration -->
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <Icon icon="mdi:shopping" class="label-icon" />
-                                    Link Amazon (opzionale)
-                                </label>
-                                <div class="url-input-group">
-                                    <input v-model="editForm.amazonUrl" type="url" class="form-input"
-                                        placeholder="https://amzn.eu/d/..." :disabled="isLoading"
-                                        @blur="fetchAmazonData" />
-                                    <button v-if="editForm.amazonUrl" @click="fetchAmazonData"
-                                        :disabled="componentsStore.loading || isLoading" class="fetch-btn"
-                                        title="Aggiorna dati Amazon">
-                                        <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
-                                            :class="{ 'spin': componentsStore.loading }" />
-                                    </button>
-                                </div>
-                                <small class="form-hint">Link del prodotto su Amazon per sincronizzazione
-                                    automatica</small>
-
-                                <!-- Amazon Product Info -->
-                                <div v-if="amazonProductInfo" class="amazon-info">
-                                    <div class="info-header">
-                                        <Icon icon="mdi:information" />
-                                        <span>Informazioni da Amazon</span>
-                                        <button @click="applyAmazonData" class="apply-btn">
-                                            <Icon icon="mdi:download" />
-                                            Applica Dati
-                                        </button>
-                                    </div>
-                                    <div class="info-content">
-                                        <div class="info-item">
-                                            <strong>Nome:</strong> {{ amazonProductInfo.title }}
-                                        </div>
-                                        <div class="info-item">
-                                            <strong>Prezzo:</strong> €{{ amazonProductInfo.price.toFixed(2) }}
-                                        </div>
-                                        <div v-if="amazonProductInfo.specifications?.length" class="info-item">
-                                            <strong>Specifiche:</strong>
-                                            <div class="specs-grid">
-                                                <span v-for="spec in amazonProductInfo.specifications" :key="spec"
-                                                    class="spec-badge">
-                                                    {{ spec }}
-                                                </span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Specifications -->
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <Icon icon="mdi:format-list-bulleted" class="label-icon" />
-                                    Specifiche Tecniche
-                                </label>
-                                <div class="specs-editor">
-                                    <textarea v-model="specificationsText" class="form-textarea" rows="6"
-                                        placeholder="Inserisci le specifiche, una per riga:&#10;12 Core / 24 Thread&#10;Base Clock: 3.7 GHz&#10;Boost Clock: 5.6 GHz&#10;AM5 Socket&#10;65W TDP"
-                                        :disabled="isLoading" />
-                                    <div class="specs-preview">
-                                        <div class="preview-header">
-                                            <Icon icon="mdi:eye" />
-                                            <span>Anteprima Tag</span>
-                                        </div>
-                                        <div class="specs-tags">
-                                            <span v-for="spec in previewSpecs" :key="spec" class="spec-tag">
-                                                {{ spec }}
-                                            </span>
-                                            <span v-if="previewSpecs.length === 0" class="empty-specs">
-                                                Nessuna specifica inserita
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
-                                <small class="form-hint">Inserisci le specifiche tecniche, una per riga</small>
-                            </div>
-
-                            <!-- Image URL -->
-                            <div class="form-group">
-                                <label class="form-label">
-                                    <Icon icon="mdi:image" class="label-icon" />
-                                    URL Immagine (opzionale)
-                                </label>
-                                <input v-model="editForm.imageUrl" type="url" class="form-input"
-                                    placeholder="https://esempio.com/immagine.jpg" :disabled="isLoading" />
-                                <small class="form-hint">URL dell'immagine del componente</small>
-                            </div>
-
-                            <!-- Change Summary -->
+                            <!-- Changes Summary -->
                             <div v-if="hasChanges" class="changes-summary">
                                 <div class="summary-header">
                                     <Icon icon="mdi:pencil" />
-                                    <span>Modifiche Rilevate</span>
+                                    <span>Pending Changes</span>
                                 </div>
                                 <div class="changes-list">
                                     <div v-for="change in changesSummary" :key="change.field" class="change-item">
@@ -197,16 +84,150 @@
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        </section>
+
+                        <!-- Edit Form Section -->
+                        <section class="form-section">
+                            <div class="section-header">
+                                <h2>Component Details</h2>
+                                <div class="section-divider"></div>
+                            </div>
+
+                            <div class="form-container">
+                                <!-- Basic Information -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <Icon icon="mdi:tag" />
+                                        Category
+                                    </label>
+                                    <select v-model="editForm.category" class="form-select premium"
+                                        :disabled="isLoading">
+                                        <option v-for="category in allCategories" :key="category" :value="category">
+                                            {{ getCategoryName(category) }}
+                                        </option>
+                                    </select>
+                                    <span class="form-hint">Component category in the system</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <Icon icon="mdi:cube-outline" />
+                                        Model Name
+                                    </label>
+                                    <input v-model="editForm.model" type="text" class="form-input premium"
+                                        placeholder="e.g. AMD Ryzen 9 7900X" :disabled="isLoading" />
+                                    <span class="form-hint">Complete component model name</span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <Icon icon="mdi:currency-eur" />
+                                        Price (€)
+                                    </label>
+                                    <input v-model.number="editForm.price" type="number" step="0.01" min="0"
+                                        class="form-input premium" placeholder="0.00" :disabled="isLoading" />
+                                    <span class="form-hint">Current component price</span>
+                                </div>
+
+                                <!-- Amazon Integration -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <Icon icon="mdi:shopping" />
+                                        Amazon Link (Optional)
+                                    </label>
+                                    <div class="input-group premium">
+                                        <input v-model="editForm.amazonUrl" type="url" class="form-input"
+                                            placeholder="https://amzn.eu/d/..." :disabled="isLoading"
+                                            @blur="fetchAmazonData" />
+                                        <button v-if="editForm.amazonUrl" @click="fetchAmazonData"
+                                            :disabled="componentsStore.loading || isLoading" class="input-action"
+                                            title="Refresh Amazon data">
+                                            <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
+                                                :class="{ 'loading-spin': componentsStore.loading }" />
+                                        </button>
+                                    </div>
+                                    <span class="form-hint">Amazon product link for automatic synchronization</span>
+
+                                    <!-- Amazon Product Info -->
+                                    <div v-if="amazonProductInfo" class="amazon-info">
+                                        <div class="info-header">
+                                            <Icon icon="mdi:information" />
+                                            <span>Amazon Information</span>
+                                            <button @click="applyAmazonData" class="apply-btn">
+                                                <Icon icon="mdi:download" />
+                                                Apply Data
+                                            </button>
+                                        </div>
+                                        <div class="info-content">
+                                            <div class="info-item">
+                                                <strong>Name:</strong> {{ amazonProductInfo.title }}
+                                            </div>
+                                            <div class="info-item">
+                                                <strong>Price:</strong> €{{ amazonProductInfo.price.toFixed(2) }}
+                                            </div>
+                                            <div v-if="amazonProductInfo.specifications?.length" class="info-item">
+                                                <strong>Specifications:</strong>
+                                                <div class="specs-grid">
+                                                    <span v-for="spec in amazonProductInfo.specifications" :key="spec"
+                                                        class="spec-badge">
+                                                        {{ spec }}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Specifications -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <Icon icon="mdi:format-list-bulleted" />
+                                        Technical Specifications
+                                    </label>
+                                    <div class="specs-editor">
+                                        <textarea v-model="specificationsText" class="form-textarea premium" rows="6"
+                                            placeholder="Enter specifications, one per line:&#10;12 Core / 24 Thread&#10;Base Clock: 3.7 GHz&#10;Boost Clock: 5.6 GHz&#10;AM5 Socket&#10;65W TDP"
+                                            :disabled="isLoading" />
+
+                                        <div class="specs-preview">
+                                            <div class="preview-header">
+                                                <Icon icon="mdi:eye" />
+                                                <span>Tag Preview</span>
+                                            </div>
+                                            <div class="specs-tags">
+                                                <span v-for="spec in previewSpecs" :key="spec" class="spec-tag">
+                                                    {{ spec }}
+                                                </span>
+                                                <span v-if="previewSpecs.length === 0" class="empty-specs">
+                                                    No specifications entered
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span class="form-hint">Enter technical specifications, one per line</span>
+                                </div>
+
+                                <!-- Image URL -->
+                                <div class="form-group">
+                                    <label class="form-label">
+                                        <Icon icon="mdi:image" />
+                                        Image URL (Optional)
+                                    </label>
+                                    <input v-model="editForm.imageUrl" type="url" class="form-input premium"
+                                        placeholder="https://example.com/image.jpg" :disabled="isLoading" />
+                                    <span class="form-hint">Component image URL</span>
+                                </div>
+                            </div>
+                        </section>
                     </div>
-                </div>
+                </main>
 
                 <!-- Loading State -->
                 <div v-else-if="isLoading" class="loading-container">
                     <div class="loading-content">
-                        <Icon icon="mdi:loading" class="loading-icon spin" />
-                        <h3>Caricamento componente...</h3>
-                        <p>Attendere prego</p>
+                        <Icon icon="mdi:loading" class="loading-icon loading-spin" />
+                        <h3>Loading component...</h3>
+                        <p>Please wait</p>
                     </div>
                 </div>
 
@@ -214,21 +235,20 @@
                 <div v-else-if="error" class="error-container">
                     <div class="error-content">
                         <Icon icon="mdi:alert-circle" class="error-icon" />
-                        <h3>Componente non trovato</h3>
+                        <h3>Component not found</h3>
                         <p>{{ error }}</p>
                         <button @click="goBack" class="error-btn">
                             <Icon icon="mdi:arrow-left" />
-                            Torna Indietro
+                            Go Back
                         </button>
                     </div>
                 </div>
 
                 <!-- Reset Confirmation Modal -->
-                <BaseModal v-model="showResetModal" title="Ripristina Modifiche" icon="mdi:restore" size="sm"
-                    confirm-text="Ripristina" cancel-text="Annulla" @confirm="resetChanges"
-                    @cancel="showResetModal = false">
-                    <p>Sei sicuro di voler ripristinare tutte le modifiche ai valori originali?</p>
-                    <p><strong>Questa azione non può essere annullata.</strong></p>
+                <BaseModal v-model="showResetModal" title="Reset Changes" icon="mdi:restore" size="sm"
+                    confirm-text="Reset" cancel-text="Cancel" @confirm="resetChanges" @cancel="showResetModal = false">
+                    <p>Are you sure you want to reset all changes to their original values?</p>
+                    <p><strong>This action cannot be undone.</strong></p>
                 </BaseModal>
             </div>
         </ion-content>
@@ -520,215 +540,345 @@
         background: var(--color-bg-dark);
         color: var(--color-text-dark);
         position: relative;
-        overflow: hidden;
+        overflow-x: hidden;
     }
 
-    /* Background Effects */
-    .bg-grid {
+    /* Premium Background Effects */
+    .bg-mesh {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
         background-image:
-            linear-gradient(rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px);
-        background-size: 60px 60px;
-        animation: gridMove 40s linear infinite;
-        z-index: 1;
+            radial-gradient(circle at 25% 25%, rgba(var(--color-primary-rgb), 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 75% 75%, rgba(var(--color-accent-rgb), 0.15) 0%, transparent 50%),
+            radial-gradient(circle at 50% 50%, rgba(var(--color-info-rgb), 0.1) 0%, transparent 70%);
+        z-index: var(--z-base);
     }
 
-    @keyframes gridMove {
-        0% {
-            transform: translate(0, 0);
-        }
-
-        100% {
-            transform: translate(60px, 60px);
-        }
-    }
-
-    .bg-overlay {
+    .bg-gradient {
         position: fixed;
         top: 0;
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(circle at 20% 80%,
-                rgba(var(--color-primary-rgb), 0.1) 0%,
-                transparent 50%),
-            radial-gradient(circle at 80% 20%,
-                rgba(var(--color-accent-rgb), 0.08) 0%,
-                transparent 50%);
-        z-index: 2;
+        background:
+            linear-gradient(135deg, rgba(var(--color-surface-dark-rgb), 0.95) 0%, rgba(var(--color-bg-dark-rgb), 0.98) 100%);
+        backdrop-filter: blur(var(--blur-lg));
+        z-index: calc(var(--z-base) + 1);
     }
 
-    /* Header */
+    /* Premium Header */
     .page-header {
-        position: relative;
-        z-index: 3;
-        background: rgba(var(--color-surface-dark-rgb), 0.8);
-        backdrop-filter: blur(20px);
-        border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        padding: var(--space-6);
+        position: sticky;
+        top: 0;
+        z-index: var(--z-sticky);
+        background: rgba(var(--color-bg-dark-rgb), 0.85);
+        backdrop-filter: blur(var(--blur-lg));
+        border-bottom: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        padding: var(--space-8) 0;
     }
 
     .header-content {
-        display: flex;
-        align-items: center;
-        gap: var(--space-4);
-        max-width: 1200px;
+        position: relative;
+        z-index: calc(var(--z-base) + 2);
+        max-width: var(--container-2xl);
         margin: 0 auto;
+        padding: 0 var(--space-8);
     }
 
-    .back-btn,
-    .reset-btn,
-    .save-btn {
+    .breadcrumb {
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        padding: var(--space-3) var(--space-4);
-        border-radius: var(--radius-lg);
+        margin-bottom: var(--space-6);
         font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
-        cursor: pointer;
-        transition: var(--transition-all);
-        border: 1px solid transparent;
     }
 
-    .back-btn {
-        background: rgba(var(--color-secondary-rgb), 0.1);
-        border-color: rgba(var(--color-secondary-rgb), 0.3);
+    .breadcrumb-item {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-2) 0;
+        background: none;
+        border: none;
         color: var(--color-text-muted);
+        cursor: pointer;
+        transition: var(--transition-fast);
+        text-decoration: none;
     }
 
-    .back-btn:hover {
-        background: rgba(var(--color-secondary-rgb), 0.2);
+    .breadcrumb-item:hover {
         color: var(--color-text-dark);
     }
 
-    .reset-btn {
-        background: rgba(var(--color-warning-rgb), 0.1);
-        border-color: rgba(var(--color-warning-rgb), 0.3);
-        color: var(--color-warning);
+    .breadcrumb-separator {
+        color: var(--color-secondary-500);
+        font-size: var(--font-size-md);
     }
 
-    .reset-btn:hover {
-        background: rgba(var(--color-warning-rgb), 0.2);
-        transform: translateY(-2px);
+    .breadcrumb-current {
+        color: var(--color-primary);
+        font-weight: var(--font-weight-medium);
     }
 
-    .save-btn {
-        background: var(--color-primary);
-        border-color: var(--color-primary);
-        color: var(--color-white);
+    .header-main {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: var(--space-8);
     }
 
-    .save-btn:hover:not(:disabled) {
-        background: var(--color-primary-light);
-        border-color: var(--color-primary-light);
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-primary);
-    }
-
-    .save-btn:disabled {
-        opacity: var(--opacity-50);
-        cursor: not-allowed;
-    }
-
-    .save-btn.loading {
-        cursor: wait;
-    }
-
-    .header-info {
+    .component-identity {
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
         flex: 1;
     }
 
-    .header-info h1 {
-        margin: 0 0 var(--space-1) 0;
-        font-size: var(--font-size-2xl);
+    .component-avatar {
+        width: var(--space-16);
+        height: var(--space-16);
+        background: linear-gradient(135deg, var(--color-warning), var(--color-accent));
+        border-radius: var(--radius-lg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: var(--font-size-3xl);
+        color: var(--color-white);
+        box-shadow: 0 10px 25px rgba(var(--color-warning-rgb), 0.3);
+    }
+
+    .component-meta {
+        flex: 1;
+    }
+
+    .component-name {
+        font-size: var(--font-size-4xl);
         font-weight: var(--font-weight-bold);
-        background: linear-gradient(135deg, var(--color-primary), var(--color-accent));
+        margin: 0 0 var(--space-2) 0;
+        background: linear-gradient(135deg, var(--color-text-dark), var(--color-text-muted));
         background-clip: text;
         -webkit-background-clip: text;
         -webkit-text-fill-color: transparent;
+        line-height: var(--line-height-tight);
     }
 
-    .header-info p {
-        margin: 0;
+    .component-description {
+        font-size: var(--font-size-md);
         color: var(--color-text-muted);
-        font-size: var(--font-size-sm);
+        margin: 0;
+        line-height: var(--line-height-normal);
     }
 
     .header-actions {
         display: flex;
+        gap: var(--space-4);
+    }
+
+    .action-primary,
+    .action-secondary {
+        display: flex;
+        align-items: center;
         gap: var(--space-3);
+        padding: var(--space-3) var(--space-6);
+        border: none;
+        border-radius: var(--radius-lg);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: var(--transition-medium);
+        text-decoration: none;
     }
 
-    /* Main Content */
-    .edit-container {
+    .action-primary {
+        background: var(--gradient-primary);
+        color: var(--color-white);
+        box-shadow: var(--shadow-primary);
+    }
+
+    .action-primary:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.5);
+    }
+
+    .action-primary:disabled {
+        opacity: var(--opacity-50);
+        cursor: not-allowed;
+        transform: none;
+    }
+
+    .action-secondary {
+        background: rgba(var(--color-warning-rgb), 0.1);
+        color: var(--color-warning);
+        border: var(--border-thin) solid rgba(var(--color-warning-rgb), 0.3);
+    }
+
+    .action-secondary:hover {
+        background: rgba(var(--color-warning-rgb), 0.2);
+        transform: translateY(-2px);
+    }
+
+    /* Dashboard Layout */
+    .dashboard {
         position: relative;
-        z-index: 3;
-        max-width: 1200px;
+        z-index: calc(var(--z-base) + 2);
+        max-width: var(--container-2xl);
         margin: 0 auto;
-        padding: var(--space-6);
-        display: grid;
-        grid-template-columns: 350px 1fr;
-        gap: var(--space-8);
+        padding: var(--space-12) var(--space-8);
     }
 
+    .dashboard-grid {
+        display: grid;
+        grid-template-columns: 400px 1fr;
+        gap: var(--space-12);
+    }
+
+    /* Section Headers */
     .section-header {
         display: flex;
         align-items: center;
-        gap: var(--space-4);
-        margin-bottom: var(--space-6);
+        gap: var(--space-6);
+        margin-bottom: var(--space-10);
     }
 
     .section-header h2 {
-        font-size: var(--font-size-xl);
+        font-size: var(--font-size-2xl);
         font-weight: var(--font-weight-semibold);
         color: var(--color-text-dark);
         margin: 0;
     }
 
-    .header-line {
+    .section-divider {
         flex: 1;
         height: 2px;
-        background: linear-gradient(90deg, var(--color-primary), transparent);
+        background: linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.6), transparent);
+        border-radius: var(--radius-full);
     }
 
     /* Preview Section */
     .preview-section {
         position: sticky;
-        top: var(--space-6);
+        top: var(--space-24);
         height: fit-content;
     }
 
-    /* Form Section */
-    .form-container {
-        background: rgba(var(--color-surface-dark-rgb), 0.6);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-xl);
+    .preview-container {
+        margin-bottom: var(--space-8);
+    }
+
+    /* Changes Summary */
+    .changes-summary {
+        background: rgba(var(--color-warning-rgb), 0.05);
+        border: var(--border-thin) solid rgba(var(--color-warning-rgb), 0.2);
+        border-radius: var(--radius-lg);
         padding: var(--space-6);
-        backdrop-filter: blur(20px);
+        margin-top: var(--space-8);
+    }
+
+    .summary-header {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        margin-bottom: var(--space-6);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-warning);
+        padding-bottom: var(--space-3);
+        border-bottom: var(--border-thin) solid rgba(var(--color-warning-rgb), 0.2);
+    }
+
+    .changes-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-4);
+    }
+
+    .change-item {
+        display: flex;
+        align-items: flex-start;
+        gap: var(--space-3);
+        padding: var(--space-3);
+        background: rgba(var(--color-warning-rgb), 0.1);
+        border-radius: var(--radius-md);
+    }
+
+    .change-icon {
+        font-size: var(--font-size-lg);
+        color: var(--color-warning);
+        margin-top: 2px;
+        flex-shrink: 0;
+    }
+
+    .change-content {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .change-field {
+        font-weight: var(--font-weight-medium);
+        font-size: var(--font-size-sm);
+        color: var(--color-text-dark);
+        display: block;
+        margin-bottom: var(--space-2);
+    }
+
+    .change-values {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        font-size: var(--font-size-xs);
+        flex-wrap: wrap;
+    }
+
+    .old-value {
+        color: var(--color-text-muted);
+        text-decoration: line-through;
+        opacity: var(--opacity-70);
+    }
+
+    .arrow {
+        color: var(--color-warning);
+        font-size: 0.75rem;
+        flex-shrink: 0;
+    }
+
+    .new-value {
+        color: var(--color-success);
+        font-weight: var(--font-weight-medium);
+    }
+
+    /* Form Section */
+    .form-section {
+        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-2xl);
+        padding: var(--space-8);
+        backdrop-filter: blur(var(--blur-sm));
+    }
+
+    .form-container {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-8);
     }
 
     .form-group {
-        margin-bottom: var(--space-6);
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-3);
     }
 
     .form-label {
         display: flex;
         align-items: center;
-        gap: var(--space-2);
-        margin-bottom: var(--space-2);
-        font-weight: var(--font-weight-medium);
+        gap: var(--space-3);
+        font-weight: var(--font-weight-semibold);
         font-size: var(--font-size-sm);
         color: var(--color-text-dark);
     }
 
-    .label-icon {
-        font-size: 1rem;
+    .form-label svg {
+        font-size: var(--font-size-lg);
         color: var(--color-primary);
     }
 
@@ -736,21 +886,30 @@
     .form-select,
     .form-textarea {
         width: 100%;
-        padding: var(--space-3);
-        background: rgba(var(--color-primary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-md);
+        padding: var(--space-4) var(--space-5);
+        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.3);
+        border-radius: var(--radius-lg);
         color: var(--color-text-dark);
         font-size: var(--font-size-sm);
-        transition: var(--transition-all);
+        transition: var(--transition-medium);
+        backdrop-filter: blur(var(--blur-sm));
+    }
+
+    .form-input.premium,
+    .form-select.premium,
+    .form-textarea.premium {
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
+        border: var(--border-2) solid rgba(var(--color-primary-rgb), 0.4);
     }
 
     .form-input:focus,
     .form-select:focus,
     .form-textarea:focus {
         outline: none;
-        border-color: rgba(var(--color-primary-rgb), 0.5);
-        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
+        background: rgba(var(--color-surface-dark-rgb), 0.9);
     }
 
     .form-input:disabled,
@@ -760,39 +919,63 @@
         cursor: not-allowed;
     }
 
+    .form-select option {
+        background: var(--color-surface-dark);
+        color: var(--color-text-dark);
+    }
+
     .form-hint {
-        display: block;
-        margin-top: var(--space-1);
-        color: var(--color-text-muted);
         font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
         line-height: var(--line-height-relaxed);
     }
 
-    .url-input-group {
+    /* Input Group */
+    .input-group.premium {
         display: flex;
-        gap: var(--space-2);
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
+        border: var(--border-2) solid rgba(var(--color-primary-rgb), 0.4);
+        border-radius: var(--radius-lg);
+        overflow: hidden;
+        transition: var(--transition-medium);
     }
 
-    .fetch-btn {
+    .input-group.premium:focus-within {
+        border-color: var(--color-primary);
+        box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.2);
+    }
+
+    .input-group.premium .form-input {
+        border: none;
+        background: transparent;
+        flex: 1;
+    }
+
+    .input-group.premium .form-input:focus {
+        box-shadow: none;
+        background: transparent;
+    }
+
+    .input-action {
+        width: 48px;
+        height: 48px;
+        background: var(--color-primary);
+        border: none;
+        color: var(--color-white);
+        cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 40px;
-        height: 40px;
-        background: var(--color-primary);
-        border: none;
-        border-radius: var(--radius-md);
-        color: var(--color-white);
-        cursor: pointer;
-        transition: var(--transition-all);
+        transition: var(--transition-medium);
+        font-size: var(--font-size-lg);
     }
 
-    .fetch-btn:hover:not(:disabled) {
-        background: var(--color-primary-light);
+    .input-action:hover:not(:disabled) {
+        background: var(--color-primary-dark);
     }
 
-    .fetch-btn:disabled {
-        opacity: var(--opacity-50);
+    .input-action:disabled {
+        opacity: var(--opacity-60);
         cursor: not-allowed;
     }
 
@@ -800,7 +983,7 @@
     .amazon-info {
         margin-top: var(--space-4);
         background: rgba(var(--color-info-rgb), 0.05);
-        border: 1px solid rgba(var(--color-info-rgb), 0.2);
+        border: var(--border-thin) solid rgba(var(--color-info-rgb), 0.2);
         border-radius: var(--radius-lg);
         overflow: hidden;
     }
@@ -808,10 +991,10 @@
     .info-header {
         display: flex;
         align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-3) var(--space-4);
+        gap: var(--space-3);
+        padding: var(--space-4) var(--space-6);
         background: rgba(var(--color-info-rgb), 0.1);
-        border-bottom: 1px solid rgba(var(--color-info-rgb), 0.2);
+        border-bottom: var(--border-thin) solid rgba(var(--color-info-rgb), 0.2);
         color: var(--color-info);
         font-weight: var(--font-weight-medium);
     }
@@ -820,42 +1003,46 @@
         margin-left: auto;
         display: flex;
         align-items: center;
-        gap: var(--space-1);
-        padding: var(--space-1) var(--space-2);
+        gap: var(--space-2);
+        padding: var(--space-2) var(--space-4);
         background: var(--color-info);
         color: var(--color-white);
         border: none;
-        border-radius: var(--radius-sm);
+        border-radius: var(--radius-md);
         font-size: var(--font-size-xs);
         cursor: pointer;
-        transition: var(--transition-all);
+        transition: var(--transition-medium);
     }
 
     .apply-btn:hover {
-        background: var(--color-info-light);
+        background: var(--color-info-dark);
     }
 
     .info-content {
-        padding: var(--space-4);
+        padding: var(--space-6);
     }
 
     .info-item {
-        margin-bottom: var(--space-3);
+        margin-bottom: var(--space-4);
         font-size: var(--font-size-sm);
+    }
+
+    .info-item:last-child {
+        margin-bottom: 0;
     }
 
     .specs-grid {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--space-1);
-        margin-top: var(--space-2);
+        gap: var(--space-2);
+        margin-top: var(--space-3);
     }
 
     .spec-badge {
         background: rgba(var(--color-info-rgb), 0.2);
         color: var(--color-info);
-        padding: var(--space-1) var(--space-2);
-        border-radius: var(--radius-sm);
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-md);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
     }
@@ -864,21 +1051,21 @@
     .specs-editor {
         display: grid;
         grid-template-columns: 1fr 1fr;
-        gap: var(--space-4);
+        gap: var(--space-6);
     }
 
     .specs-preview {
         background: rgba(var(--color-secondary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-secondary-rgb), 0.2);
-        border-radius: var(--radius-md);
-        padding: var(--space-3);
+        border: var(--border-thin) solid rgba(var(--color-secondary-rgb), 0.2);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
     }
 
     .preview-header {
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        margin-bottom: var(--space-3);
+        margin-bottom: var(--space-4);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
         color: var(--color-text-muted);
@@ -889,13 +1076,13 @@
     .specs-tags {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--space-1);
+        gap: var(--space-2);
     }
 
     .spec-tag {
         background: rgba(var(--color-primary-rgb), 0.15);
-        padding: var(--space-1) var(--space-2);
-        border-radius: var(--radius-sm);
+        padding: var(--space-1) var(--space-3);
+        border-radius: var(--radius-md);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
         color: var(--color-primary-light);
@@ -907,87 +1094,16 @@
         font-size: var(--font-size-xs);
     }
 
-    /* Changes Summary */
-    .changes-summary {
-        background: rgba(var(--color-warning-rgb), 0.05);
-        border: 1px solid rgba(var(--color-warning-rgb), 0.2);
-        border-radius: var(--radius-lg);
-        padding: var(--space-4);
-        margin-top: var(--space-6);
-    }
-
-    .summary-header {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        margin-bottom: var(--space-3);
-        font-weight: var(--font-weight-semibold);
-        color: var(--color-warning);
-    }
-
-    .changes-list {
-        display: flex;
-        flex-direction: column;
-        gap: var(--space-3);
-    }
-
-    .change-item {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-2);
-        background: rgba(var(--color-warning-rgb), 0.1);
-        border-radius: var(--radius-md);
-    }
-
-    .change-icon {
-        font-size: 1rem;
-        color: var(--color-warning);
-    }
-
-    .change-content {
-        flex: 1;
-    }
-
-    .change-field {
-        font-weight: var(--font-weight-medium);
-        font-size: var(--font-size-sm);
-        color: var(--color-text-dark);
-    }
-
-    .change-values {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        margin-top: var(--space-1);
-        font-size: var(--font-size-xs);
-    }
-
-    .old-value {
-        color: var(--color-text-muted);
-        text-decoration: line-through;
-    }
-
-    .arrow {
-        color: var(--color-warning);
-        font-size: 0.75rem;
-    }
-
-    .new-value {
-        color: var(--color-success);
-        font-weight: var(--font-weight-medium);
-    }
-
     /* Loading & Error States */
     .loading-container,
     .error-container {
         position: relative;
-        z-index: 3;
+        z-index: calc(var(--z-base) + 2);
         display: flex;
         align-items: center;
         justify-content: center;
         min-height: 60vh;
-        padding: var(--space-6);
+        padding: var(--space-8);
     }
 
     .loading-content,
@@ -998,8 +1114,8 @@
 
     .loading-icon,
     .error-icon {
-        font-size: 4rem;
-        margin-bottom: var(--space-4);
+        font-size: var(--font-size-6xl);
+        margin-bottom: var(--space-6);
     }
 
     .loading-icon {
@@ -1012,37 +1128,38 @@
 
     .loading-content h3,
     .error-content h3 {
-        margin: 0 0 var(--space-2) 0;
-        font-size: var(--font-size-xl);
+        margin: 0 0 var(--space-3) 0;
+        font-size: var(--font-size-2xl);
         color: var(--color-text-dark);
     }
 
     .loading-content p,
     .error-content p {
-        margin: 0 0 var(--space-6) 0;
+        margin: 0 0 var(--space-8) 0;
         color: var(--color-text-muted);
+        font-size: var(--font-size-md);
     }
 
     .error-btn {
         display: inline-flex;
         align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-3) var(--space-6);
+        gap: var(--space-3);
+        padding: var(--space-4) var(--space-8);
         background: var(--color-error);
         color: var(--color-white);
         border: none;
         border-radius: var(--radius-lg);
         font-weight: var(--font-weight-medium);
         cursor: pointer;
-        transition: var(--transition-all);
+        transition: var(--transition-medium);
     }
 
     .error-btn:hover {
-        background: var(--color-error-light);
+        background: var(--color-error-dark);
         transform: translateY(-2px);
     }
 
-    .spin {
+    .loading-spin {
         animation: spin 1s linear infinite;
     }
 
@@ -1056,23 +1173,53 @@
         }
     }
 
-    /* Responsive */
-    @media (max-width: 1024px) {
-        .edit-container {
+    /* Responsive Design */
+    @media (max-width: var(--breakpoint-lg)) {
+        .dashboard {
+            padding: var(--space-8) var(--space-6);
+        }
+
+        .dashboard-grid {
             grid-template-columns: 1fr;
-            gap: var(--space-6);
+            gap: var(--space-8);
         }
 
         .preview-section {
             position: relative;
             top: auto;
         }
+
+        .header-main {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--space-6);
+        }
+
+        .component-identity {
+            width: 100%;
+        }
     }
 
-    @media (max-width: 768px) {
-        .header-content {
-            flex-wrap: wrap;
-            gap: var(--space-3);
+    @media (max-width: var(--breakpoint-md)) {
+
+        .header-content,
+        .dashboard {
+            padding-left: var(--space-4);
+            padding-right: var(--space-4);
+        }
+
+        .breadcrumb {
+            margin-bottom: var(--space-4);
+        }
+
+        .component-avatar {
+            width: 48px;
+            height: 48px;
+            font-size: var(--font-size-2xl);
+        }
+
+        .component-name {
+            font-size: var(--font-size-2xl);
         }
 
         .header-actions {
@@ -1080,27 +1227,43 @@
             justify-content: flex-end;
         }
 
+        .action-primary span,
+        .action-secondary span {
+            display: none;
+        }
+
         .specs-editor {
             grid-template-columns: 1fr;
         }
     }
 
-    @media (max-width: 480px) {
-        .edit-container {
-            padding: var(--space-4);
+    @media (max-width: var(--breakpoint-sm)) {
+        .form-section {
+            padding: var(--space-6);
         }
 
-        .form-container {
-            padding: var(--space-4);
-        }
-
-        .url-input-group {
+        .input-group.premium {
             flex-direction: column;
         }
 
-        .fetch-btn {
+        .input-action {
             width: 100%;
             height: 40px;
+        }
+
+        .header-actions {
+            flex-direction: column;
+            gap: var(--space-3);
+        }
+
+        .changes-list {
+            gap: var(--space-3);
+        }
+
+        .change-item {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: var(--space-2);
         }
     }
 </style>

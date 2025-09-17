@@ -2,7 +2,7 @@
   <ion-page>
     <ion-content>
       <div class="home-page">
-        <!-- Background Grid Animation -->
+        <!-- Animated Background -->
         <div class="bg-grid"></div>
         <div class="bg-overlay"></div>
 
@@ -16,8 +16,8 @@
                 <div class="logo-glow"></div>
               </div>
               <h1 class="hero-title">
-                <span class="title-primary"></span>
-                <span class="title-accent"> Spex</span>
+                <span class="title-primary">PC</span>
+                <span class="title-accent">Spex</span>
               </h1>
               <p class="hero-subtitle">
                 Sistema avanzato per la creazione e gestione di configurazioni PC personalizzate
@@ -38,7 +38,7 @@
           <!-- Quick Actions -->
           <section class="actions-section">
             <div class="section-header">
-              <h2>Pannello di Controllo</h2>
+              <h2>Control Panel</h2>
               <div class="header-line"></div>
             </div>
 
@@ -51,11 +51,11 @@
                     <div class="icon-pulse"></div>
                   </div>
                   <div class="card-info">
-                    <h3>Build PC</h3>
-                    <p>Gestisci le tue configurazioni complete</p>
+                    <h3>PC Builds</h3>
+                    <p>Manage your complete system configurations</p>
                     <div class="card-stats">
                       <span class="stat-number">{{ totalBuilds }}</span>
-                      <span class="stat-label">Configurazioni</span>
+                      <span class="stat-label">Configurations</span>
                     </div>
                   </div>
                   <Icon icon="mdi:chevron-right" class="card-arrow" />
@@ -70,11 +70,11 @@
                     <div class="icon-pulse"></div>
                   </div>
                   <div class="card-info">
-                    <h3>Componenti</h3>
-                    <p>Database completo dei componenti</p>
+                    <h3>Components</h3>
+                    <p>Complete database of PC components</p>
                     <div class="card-stats">
                       <span class="stat-number">{{ totalComponents }}</span>
-                      <span class="stat-label">Componenti</span>
+                      <span class="stat-label">Components</span>
                     </div>
                   </div>
                   <Icon icon="mdi:chevron-right" class="card-arrow" />
@@ -86,7 +86,7 @@
           <!-- Analytics Section -->
           <section v-if="totalBuilds || totalComponents" class="analytics-section">
             <div class="section-header">
-              <h2>Sistema Analytics</h2>
+              <h2>Performance Analytics</h2>
               <div class="header-line"></div>
             </div>
 
@@ -132,16 +132,16 @@
                 <div class="quick-stat">
                   <Icon icon="mdi:database" class="quick-stat-icon" />
                   <div class="quick-stat-info">
-                    <span class="quick-stat-value">{{ totalBuilds > 0 ? (totalComponents / totalBuilds).toFixed(1) : '0'
-                    }}</span>
+                    <span class="quick-stat-value">{{ totalBuilds > 0 ? (totalComponents /
+                      totalBuilds).toFixed(1) : '0' }}</span>
                     <span class="quick-stat-label">Avg Components</span>
                   </div>
                 </div>
                 <div class="quick-stat">
                   <Icon icon="mdi:trending-up" class="quick-stat-icon" />
                   <div class="quick-stat-info">
-                    <span class="quick-stat-value">{{ totalBuilds > 0 ? (totalValue / totalBuilds).toFixed(0) : '0'
-                    }}€</span>
+                    <span class="quick-stat-value">{{ totalBuilds > 0 ? (totalValue /
+                      totalBuilds).toFixed(0) : '0' }}€</span>
                     <span class="quick-stat-label">Avg Value</span>
                   </div>
                 </div>
@@ -179,7 +179,7 @@
     overflow: hidden;
   }
 
-  /* Background Effects */
+  /* Premium Background Effects */
   .bg-grid {
     position: fixed;
     top: 0;
@@ -191,7 +191,7 @@
       linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px);
     background-size: 60px 60px;
     animation: gridMove 20s linear infinite;
-    z-index: 1;
+    z-index: var(--z-base);
   }
 
   @keyframes gridMove {
@@ -210,19 +210,16 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: radial-gradient(circle at 20% 20%,
-        rgba(var(--color-primary-rgb), 0.1) 0%,
-        transparent 50%),
-      radial-gradient(circle at 80% 80%,
-        rgba(var(--color-accent-rgb), 0.1) 0%,
-        transparent 50%);
-    z-index: 2;
+    background:
+      radial-gradient(circle at 20% 20%, rgba(var(--color-primary-rgb), 0.1) 0%, transparent 50%),
+      radial-gradient(circle at 80% 80%, rgba(var(--color-accent-rgb), 0.1) 0%, transparent 50%);
+    z-index: calc(var(--z-base) + 1);
   }
 
   .home-container {
     position: relative;
-    z-index: 3;
-    max-width: 1200px;
+    z-index: calc(var(--z-base) + 2);
+    max-width: var(--container-xl);
     margin: 0 auto;
     padding: var(--space-8) var(--space-6);
   }
@@ -245,10 +242,10 @@
   }
 
   .logo-icon {
-    font-size: 4rem;
+    font-size: var(--font-size-6xl);
     color: var(--color-primary);
     position: relative;
-    z-index: 2;
+    z-index: calc(var(--z-base) + 1);
   }
 
   .logo-glow {
@@ -259,26 +256,26 @@
     width: 120px;
     height: 120px;
     background: radial-gradient(circle, rgba(var(--color-primary-rgb), 0.3) 0%, transparent 70%);
-    border-radius: 50%;
-    animation: pulse 2s ease-in-out infinite;
+    border-radius: var(--radius-full);
+    animation: logoGlow 2s ease-in-out infinite;
   }
 
-  @keyframes pulse {
+  @keyframes logoGlow {
 
     0%,
     100% {
       transform: translate(-50%, -50%) scale(1);
-      opacity: 0.7;
+      opacity: var(--opacity-70);
     }
 
     50% {
       transform: translate(-50%, -50%) scale(1.1);
-      opacity: 0.4;
+      opacity: var(--opacity-40);
     }
   }
 
   .hero-title {
-    font-size: var(--font-size-5xl);
+    font-size: var(--font-size-6xl);
     font-weight: var(--font-weight-black);
     margin-bottom: var(--space-6);
     line-height: var(--line-height-tight);
@@ -315,12 +312,12 @@
     gap: var(--space-2);
     padding: var(--space-3) var(--space-6);
     background: rgba(var(--color-primary-rgb), 0.1);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+    border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
     border-radius: var(--radius-full);
     font-size: var(--font-size-sm);
     font-weight: var(--font-weight-medium);
     color: var(--color-primary-light);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(var(--blur-sm));
   }
 
   /* Actions Section */
@@ -337,7 +334,7 @@
   }
 
   .section-header h2 {
-    font-size: var(--font-size-2xl);
+    font-size: var(--font-size-3xl);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-dark);
     margin: 0;
@@ -347,6 +344,7 @@
     flex: 1;
     height: 2px;
     background: linear-gradient(90deg, var(--color-primary), transparent);
+    border-radius: var(--radius-full);
   }
 
   .actions-grid {
@@ -358,12 +356,12 @@
   .action-card {
     position: relative;
     background: rgba(var(--color-surface-dark-rgb), 0.8);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-    border-radius: var(--radius-xl);
+    border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+    border-radius: var(--radius-2xl);
     padding: var(--space-6);
     cursor: pointer;
     transition: var(--transition-all);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(var(--blur-lg));
     overflow: hidden;
   }
 
@@ -374,7 +372,7 @@
   }
 
   .action-card:hover .card-glow {
-    opacity: 1;
+    opacity: var(--opacity-100);
   }
 
   .action-card:hover .icon-pulse {
@@ -404,11 +402,11 @@
     padding: var(--space-4);
     background: rgba(var(--color-primary-rgb), 0.1);
     border-radius: var(--radius-lg);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+    border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
   }
 
   .card-icon {
-    font-size: 2rem;
+    font-size: var(--font-size-4xl);
     color: var(--color-primary);
     display: block;
   }
@@ -419,7 +417,7 @@
     background: linear-gradient(45deg, var(--color-primary), var(--color-accent));
     border-radius: var(--radius-lg);
     opacity: 0;
-    z-index: -1;
+    z-index: var(--z-hide);
   }
 
   @keyframes iconPulse {
@@ -431,7 +429,7 @@
     }
 
     50% {
-      opacity: 0.3;
+      opacity: var(--opacity-30);
       transform: scale(1.05);
     }
   }
@@ -473,7 +471,7 @@
   }
 
   .card-arrow {
-    font-size: 1.5rem;
+    font-size: var(--font-size-2xl);
     color: var(--color-text-muted);
     transition: var(--transition-all);
   }
@@ -492,10 +490,10 @@
 
   .analytics-card {
     background: rgba(var(--color-surface-dark-rgb), 0.8);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-    border-radius: var(--radius-xl);
+    border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
+    border-radius: var(--radius-2xl);
     padding: var(--space-6);
-    backdrop-filter: blur(20px);
+    backdrop-filter: blur(var(--blur-lg));
   }
 
   .analytics-header {
@@ -508,7 +506,7 @@
   }
 
   .analytics-icon {
-    font-size: 1.25rem;
+    font-size: var(--font-size-xl);
     color: var(--color-primary);
   }
 
@@ -548,7 +546,7 @@
     height: 100%;
     background: var(--color-primary);
     border-radius: var(--radius-full);
-    transition: width 1s ease-out;
+    transition: width var(--transition-slow);
   }
 
   .metric-fill.accent {
@@ -568,13 +566,13 @@
     gap: var(--space-3);
     padding: var(--space-4);
     background: rgba(var(--color-surface-dark-rgb), 0.6);
-    border: 1px solid rgba(var(--color-primary-rgb), 0.1);
+    border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
     border-radius: var(--radius-lg);
-    backdrop-filter: blur(10px);
+    backdrop-filter: blur(var(--blur-sm));
   }
 
   .quick-stat-icon {
-    font-size: 1.5rem;
+    font-size: var(--font-size-2xl);
     color: var(--color-accent);
   }
 
@@ -587,7 +585,7 @@
     font-size: var(--font-size-lg);
     font-weight: var(--font-weight-bold);
     color: var(--color-text-dark);
-    line-height: 1;
+    line-height: var(--line-height-none);
   }
 
   .quick-stat-label {
@@ -598,13 +596,13 @@
   }
 
   /* Responsive Design */
-  @media (max-width: 768px) {
+  @media (max-width: var(--breakpoint-md)) {
     .home-container {
       padding: var(--space-6) var(--space-4);
     }
 
     .hero-title {
-      font-size: var(--font-size-4xl);
+      font-size: var(--font-size-5xl);
     }
 
     .actions-grid {
@@ -631,9 +629,9 @@
     }
   }
 
-  @media (max-width: 480px) {
+  @media (max-width: var(--breakpoint-sm)) {
     .hero-title {
-      font-size: var(--font-size-3xl);
+      font-size: var(--font-size-4xl);
     }
 
     .card-content {
@@ -643,6 +641,14 @@
 
     .card-arrow {
       display: none;
+    }
+
+    .logo-icon {
+      font-size: var(--font-size-5xl);
+    }
+
+    .section-header h2 {
+      font-size: var(--font-size-2xl);
     }
   }
 </style>

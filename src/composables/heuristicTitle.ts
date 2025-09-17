@@ -2,9 +2,9 @@
 import { ComponentCategory } from "@/interfaces/builds";
 
 const BRAND_LIST = [
-  "amd","intel","nvidia","msi","asus","gigabyte","asrock","corsair","kingston",
-  "crucial","samsung","seagate","western","wd","nzxt","fractal","be quiet!",
-  "lian","cooler","evga","thermaltake","antec","phanteks","lenovo","dell","hp"
+  "amd", "intel", "nvidia", "msi", "asus", "gigabyte", "asrock", "corsair", "kingston",
+  "crucial", "samsung", "seagate", "western", "wd", "nzxt", "fractal", "be quiet!",
+  "lian", "cooler", "evga", "thermaltake", "antec", "phanteks", "lenovo", "dell", "hp"
 ];
 
 // Persistenza frequenze per stopwords dinamiche
@@ -16,7 +16,7 @@ function loadFreq(): FreqMap {
   } catch { return {}; }
 }
 function saveFreq(map: FreqMap) {
-  try { localStorage.setItem(FREQ_KEY, JSON.stringify(map)); } catch {}
+  try { localStorage.setItem(FREQ_KEY, JSON.stringify(map)); } catch { }
 }
 const freqCache = loadFreq();
 
@@ -55,29 +55,180 @@ function capitalize(s: string) {
   return s.length < 2 ? s.toUpperCase() : s[0].toUpperCase() + s.slice(1);
 }
 
-/* Pattern estrazione per categorie */
 function extractModelPatterns(tokens: string[], category?: ComponentCategory): string[] {
   const joined = tokens.join(" ");
   const found: string[] = [];
 
   // CPU
   if (category === ComponentCategory.CPU) {
-    const m1 = joined.match(/\b(Ryzen\s+\d{3,5}X?(\s?(\d+)?))\b/i);
-    if (m1) found.push(m1[1]);
-    const m2 = joined.match(/\b(Core\s+i[3579]-\d{3,5}[A-Z]{0,2})\b/i);
-    if (m2) found.push(m2[1]);
+    // Intel: prefer parts (family + number) e fallback generico
+    const intelParts = joined.match(/\b(?:intel\s+)?(?:core(?:\s+processor)?\s+)?(i[3579])[\s-]?(\d{3,5}[A-Za-z]{0,2})\b/i);
+    if (intelParts) {
+      found.push((intelParts[1] + " " + intelParts[2]).replace(/\s+/g, " ").trim());
+    } else {
+      const intelAny = joined.match(/\b(?:intel\s+)?(?:core(?:\s+processor)?\s+)?(i[3579][\s-]?\d{3,5}[A-Za-z]{0,2})\b/i);
+      if (intelAny) found.push(intelAny[1].replace(/\s+/g, " ").trim());
+    }
+
+    // Ryzen: supporta forme come "Ryzen 9 9900X" o "Ryzen 9900X"
+    const ryzen = joined.match(/\b(Ryzen(?:\s*\d)?[\s-]?\d{3,4}[A-Za-z]{0,2})\b/i);
+    if (ryzen) found.push(ryzen[1].replace(/\s+/g, " ").trim());
+
+    // Compact cores/threads formato "16C/32T"
+    const compactCT = joined.match(/(\d{1,2})\s*[Cc]\s*\/\s*(\d{1,3})\s*[Tt]/i);
+    if (compactCT) found.push(`${compactCT[1]}C/${compactCT[2]}T`);
+
+    // Cores e threads separati (fallback)
+    const coresMatch = joined.match(/(\d{1,2})\s*(?:-?\s*cores?\b|core\b|\bC\b)/i);
+    const threadsMatch = joined.match(/(\d{1,3})\s*(?:threads?|T)\b/i);
+    if (coresMatch || threadsMatch) {
+      const c = coresMatch ? `${coresMatch[1]}C` : null;
+      const t = threadsMatch ? `${threadsMatch[1]}T` : null;
+      const combo = [c, t].filter(Boolean).join("/");
+      if (combo) found.push(combo);
+    }
+
+    // Frequenze: base/boost o il valore massimo trovato
+    const baseBoost = joined.match(/(?:base[:\s]*)?(\d+(?:[.,]\d+)?)(?:\s*ghz)\s*(?:[\/\-to]+\s*(?:boost[:\s]*)?(\d+(?:[.,]\d+)?)(?:\s*ghz)?)?/i);
+    if (baseBoost) {
+      const base = baseBoost[1].replace(",", ".");
+      const boost = baseBoost[2] ? baseBoost[2].replace(",", ".") : null;
+      if (boost) found.push(`${base}GHz/${boost}GHz`);
+      else found.push(`${base}GHz`);
+    } else {
+      const ghzAll = [...joined.matchAll(/(\d+(?:[.,]\d+)?)(?:\s*ghz)/gi)].map(m => m[1].replace(",", "."));
+      if (ghzAll.length) {
+        const maxGHz = ghzAll.reduce((a, b) => (parseFloat(a) > parseFloat(b) ? a : b));
+        found.push(`${maxGHz}GHz`);
+      }
+    }
   }
 
-  // GPU
+  // GPU (estrazione estesa: modello completo, memoria, clock, bus)
   if (category === ComponentCategory.GPU) {
-    const g = joined.match(/\b(RTX|GTX|RX)\s?\d{3,4}(?:\s?(SUPER|TI|XT))?/i);
-    if (g) found.push(g[0].replace(/\s+/, " "));
+    // full-ish model: capture RTX/GTX/RX + optional variant + up to 4 trailing words (VENTUS 2X XS 8G OC)
+    const gpuFull = joined.match(/\b((?:nvidia\s+)?(?:geforce|radeon)?\s*(?:rtx|gtx|rx)\s?\d{3,4}(?:\s*(?:super|ti|xt))?(?:\s+[A-Za-z0-9\-]+){0,4})/i);
+    if (gpuFull) {
+      found.push(gpuFull[1].replace(/\s+/g, " ").trim());
+    } else {
+      const g = joined.match(/\b(RTX|GTX|RX)\s?\d{3,4}(?:\s?(SUPER|TI|XT))?/i);
+      if (g) found.push(g[0].replace(/\s+/g, " ").trim());
+    }
+
+    // Memoria: es. "8GB GDDR6", "8G", "12GB GDDR6X"
+    const mem = joined.match(/(\d{1,2})\s*(GB|G)\s*(GDDR[46X]?|HBM2E?|LPDDR[34])?/i);
+    if (mem) {
+      const size = mem[1] + "GB";
+      const type = mem[3] ? (" " + mem[3].toUpperCase()) : "";
+      found.push((size + type).trim());
+    } else {
+      // fallback small form like "8G OC"
+      const memShort = joined.match(/\b(\d{1,2})G\b/i);
+      if (memShort) found.push(memShort[1] + "GB");
+    }
+
+    // Clock (MHz) - prendi il valore più alto trovato
+    const mhzMatches = [...joined.matchAll(/(\d{3,5}(?:[.,]\d+)?)\s*mhz/gi)].map(m => m[1].replace(",", "."));
+    if (mhzMatches.length) {
+      const maxMHz = mhzMatches.reduce((a, b) => (parseFloat(a) > parseFloat(b) ? a : b));
+      found.push(maxMHz + "MHz");
+    }
+
+    // Bus width es. "128-bit" o "128 bit"
+    const bus = joined.match(/(\d{2,4})\s*-\s*bit|\b(\d{2,4})\s*bit\b/i);
+    if (bus) {
+      const w = (bus[1] || bus[2]);
+      found.push(w + "bit");
+    }
+  }
+
+  if (category === ComponentCategory.MOTHERBOARD) {
+    // full model (brand + model words, stop at punctuation or long tail)
+    const mbFull = joined.match(/\b(?:gigabyte|asus|msi|asrock|biostar|evga|foxconn|gigabyte|msi)\b[^\-\,\(]{1,40}/i);
+    if (mbFull) found.push(mbFull[0].trim());
+
+    // chipset (common families)
+    const chipset = joined.match(/\b(X670E|X670|B650|B760|Z790|Z690|H610|B560|Z590|B460|H410|H510|Z490|B450|X470|Z390)\b/i);
+    if (chipset) found.push(chipset[0].toUpperCase());
+
+    // socket (LGA/AM)
+    const socket = joined.match(/\b(LGA\d{3,4}|AM4|AM5)\b/i);
+    if (socket) found.push(socket[0].toUpperCase());
+
+    // memory type and optional max MHz ("DDR4", "DDR5", "7600 MHz")
+    const memType = joined.match(/\b(DDR[45])\b/i);
+    const memMHz = joined.match(/fino a\s*(\d{3,4})\s*mhz|(\d{3,4})\s*mhz/i);
+    if (memType) {
+      const mhz = memMHz ? ` ${(memMHz[1] || memMHz[2])}MHz` : "";
+      found.push(memType[1].toUpperCase() + mhz);
+    }
+
+    // M.2 count (es. "1x M.2", "2x PCIe 4.0 M.2")
+    const m2 = joined.match(/(\d)\s*x?\s*(?:pci[e\sa-z0-9]*\s*)?m\.2/i);
+    if (m2) found.push(`${m2[1]}x M.2`);
+
+    // PCIe / Gen
+    const pcie = joined.match(/\b(PCIe\s*5\.0|PCIe\s*4\.0|PCI Express Gen \d|PCIe\s*\d)\b/i);
+    if (pcie) found.push(pcie[0].replace(/pci express/ig, "PCIe"));
+
+    // Networking / WiFi
+    const wifi = joined.match(/\b(WIFI\s*6E|WIFI\s*6|WiFi\s*6E|WiFi\s*6)\b/i);
+    if (wifi) found.push(wifi[0].toUpperCase());
+
+    const lan = joined.match(/\b(Realtek|Intel)[^\.,]{0,30}\b(?:1Gb|GbE|2\.5G|2\.5Gb|10Gb)/i);
+    if (lan) found.push((lan && lan[0] ? lan[0].trim() : ""));
   }
 
   // RAM
   if (category === ComponentCategory.MEMORY) {
-    const r = joined.match(/\b(\d{2,4}gb)\b.*\b(ddr[3455])\b.*?(?:\b(\d{3,5})mhz\b)?/i);
-    if (r) found.push([r[1], r[2], r[3] ? r[3] + "MHz" : ""].filter(Boolean).join(" "));
+    // totale kit (es. "32GB")
+    const total = joined.match(/\b(\d{2,4}\s*GB)\b/i);
+    if (total) found.push(total[1].toUpperCase().replace(/\s+/g, ""));
+
+    // forma kit (es. "(2 x 16GB)" o "2x16GB")
+    const kitMatch = joined.match(/\((\d+)\s*[x×]\s*(\d{1,4}\s*GB)\)/i) || joined.match(/\b(\d+)\s*[x×]\s*(\d{1,4}\s*GB)\b/i);
+    if (kitMatch) found.push(`${kitMatch[1]}x${kitMatch[2].toUpperCase().replace(/\s+/g, "")}`);
+
+    // tipo DDR
+    const memType = joined.match(/\b(DDR[45])\b/i);
+    if (memType) found.push(memType[1].toUpperCase());
+
+    // frequenza (MT/s o MHz) - mantiene unità
+    const freq = joined.match(/(\d{3,5})\s*(MT\/s|MTs|MHz)/i);
+    if (freq) found.push(`${freq[1]}${freq[2].toUpperCase()}`);
+
+    // CL latency (es. CL30)
+    const cl = joined.match(/\bCL\s*([0-9]{1,2})\b/i);
+    if (cl) found.push(`CL${cl[1]}`);
+
+    // Profilo/overclock (EXPO / XMP)
+    const profile = joined.match(/\b(EXPO|XMP)\b/i);
+    if (profile) found.push(profile[1].toUpperCase());
+
+    // RGB / colore / design
+    const rgb = joined.match(/\b(RGB)\b/i);
+    if (rgb) found.push("RGB");
+
+    // Form factor (UDIMM / SO-DIMM)
+    const form = joined.match(/\b(UDIMM|SO-DIMM|DIMM)\b/i);
+    if (form) found.push(form[1].toUpperCase());
+
+    // codice modello / SKU (token alfanumerico lungo)
+    const longCodes = [...joined.matchAll(/\b([A-Z0-9\-]{6,})\b/ig)].map(m => m[1]);
+    if (longCodes.length) {
+      // prendi l'ultimo token lungo che sembra uno SKU
+      const sku = longCodes.reverse().find(t => /[A-Z0-9]/.test(t));
+      if (sku) found.push(sku.toUpperCase());
+    }
+
+    // costruiamo una sintesi compatta (se possibile)
+    const compactParts = [];
+    if (total) compactParts.push(total[1].toUpperCase().replace(/\s+/g, ""));
+    if (kitMatch) compactParts.push(`${kitMatch[1]}x${kitMatch[2].toUpperCase().replace(/\s+/g, "")}`);
+    if (memType) compactParts.push(memType[1].toUpperCase());
+    if (freq) compactParts.push(`${freq[1]}${freq[2].toUpperCase()}`);
+    if (cl) compactParts.push(`CL${cl[1]}`);
+    if (compactParts.length) found.push(compactParts.join(" "));
   }
 
   // Storage
@@ -103,9 +254,9 @@ function extractModelPatterns(tokens: string[], category?: ComponentCategory): s
 }
 
 const BASE_STOP = new Set([
-  "for","con","per","version","versione","nuovo","new","with","and","the","di",
-  "da","per","pc","desktop","gaming","kit","set","original","originale","high",
-  "alta","prestazioni","performance","premium","ufficiale","official","serie","series"
+  "for", "con", "per", "version", "versione", "nuovo", "new", "with", "and", "the", "di",
+  "da", "per", "pc", "desktop", "gaming", "kit", "set", "original", "originale", "high",
+  "alta", "prestazioni", "performance", "premium", "ufficiale", "official", "serie", "series"
 ]);
 
 /* Dynamic scoring */

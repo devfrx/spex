@@ -52,7 +52,7 @@
     "rollup": "4.44.0"
   },
   "engines": {
-    "node": ">=18.0.0"
+    "node": ">=18.x"
   },
   "description": "An Ionic project"
 }

@@ -6,9 +6,8 @@ import chromium from "@sparticuz/chromium";
   Puoi anche spostare maxDuration qui se preferisci mantenere single‑source.
 */
 export const config = {
-  runtime: "nodejs20",
+  runtime: "nodejs",
   regions: ["fra1"],
-  maxDuration: 30,
 };
 
 // Riusa il browser tra invocazioni (riduce cold start)

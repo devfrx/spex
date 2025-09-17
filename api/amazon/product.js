@@ -1,149 +1,210 @@
 import puppeteer from "puppeteer-core";
 import chromium from "@sparticuz/chromium";
 
-class AmazonScraper {
-  async scrapeProduct(url) {
-    const browser = await puppeteer.launch({
-      args: [...chromium.args, "--hide-scrollbars", "--disable-web-security"],
+/*
+  Config Vercel (Node runtime + region vicina + maxDuration già in vercel.json)
+  Puoi anche spostare maxDuration qui se preferisci mantenere single‑source.
+*/
+export const config = {
+  runtime: "nodejs20",
+  regions: ["fra1"],
+  maxDuration: 30,
+};
+
+// Riusa il browser tra invocazioni (riduce cold start)
+let browserPromise;
+
+/**
+ * Avvia (o riusa) un browser headless ottimizzato per Vercel
+ */
+async function getBrowser() {
+  if (!browserPromise) {
+    browserPromise = puppeteer.launch({
+      args: [
+        ...chromium.args,
+        "--hide-scrollbars",
+        "--disable-web-security",
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+      ],
       defaultViewport: chromium.defaultViewport,
       executablePath: await chromium.executablePath(),
       headless: chromium.headless,
     });
+  }
+  return browserPromise;
+}
 
+/**
+ * Fallback leggero: tenta un semplice fetch HTML e parse naive (title + prezzo)
+ */
+async function lightweightFetch(url) {
+  try {
+    const res = await fetch(url, {
+      headers: {
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0 Safari/537.36",
+        "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
+      },
+      // Amazon blocca HEAD spesso
+      method: "GET",
+    });
+    const html = await res.text();
+
+    const titleMatch = html.match(/id="productTitle"[^>]*>([^<]+)</);
+    const offscreenMatch = html.match(/class="a-offscreen">([^<]+)</);
+    let title = titleMatch ? titleMatch[1].trim() : "Prodotto non trovato";
+    let rawPrice = offscreenMatch ? offscreenMatch[1].trim() : "0";
+
+    // Normalizza prezzo
+    let cleaned = rawPrice.replace(/[^\d.,]/g, "");
+    if (cleaned.includes(".") && cleaned.includes(",")) {
+      if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+      } else {
+        cleaned = cleaned.replace(/,/g, "");
+      }
+    } else if (cleaned.includes(",")) {
+      const parts = cleaned.split(",");
+      if (parts[parts.length - 1].length === 2) cleaned = parts.join(".");
+      else cleaned = cleaned.replace(/,/g, "");
+    } else if (cleaned.includes(".")) {
+      const parts = cleaned.split(".");
+      if (parts[parts.length - 1].length !== 2) cleaned = parts.join("");
+    }
+
+    const price = parseFloat(cleaned) || 0;
+
+    return {
+      title,
+      price,
+      specifications: [],
+      imageUrl: undefined,
+      _lightweight: true,
+    };
+  } catch {
+    return null;
+  }
+}
+
+class AmazonScraper {
+  async scrapeProduct(url) {
+    const browser = await getBrowser();
     const page = await browser.newPage();
+
+    // Blocca risorse pesanti
+    await page.setRequestInterception(true);
+    page.on("request", (req) => {
+      const type = req.resourceType();
+      if (["image", "stylesheet", "font", "media"].includes(type)) {
+        return req.abort();
+      }
+      req.continue();
+    });
 
     try {
       await page.setUserAgent(
-        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0 Safari/537.36"
       );
-
-      await page.goto(url, {
-        waitUntil: "networkidle2",
-        timeout: 30000,
+      await page.setExtraHTTPHeaders({
+        "Accept-Language": "it-IT,it;q=0.9,en-US;q=0.8,en;q=0.7",
       });
 
-      await page.waitForTimeout(2000);
+      await page.goto(url, {
+        waitUntil: "domcontentloaded",
+        timeout: 20000,
+      });
+
+      // Piccolo delay per contenuti asincroni minimi
+      await page.waitForTimeout(800);
 
       const productData = await page.evaluate(() => {
-        // Stesso codice di scraping del backend originale
-        let title = "Prodotto non trovato";
-        const titleSelectors = [
-          "#productTitle",
-          ".product-title",
-          "h1 span",
-          ".a-size-large",
-        ];
-
-        for (const selector of titleSelectors) {
-          const element = document.querySelector(selector);
-          if (element && element.innerText) {
-            title = element.innerText.trim();
-            break;
+        const pickText = (selectors) => {
+          for (const sel of selectors) {
+            const el = document.querySelector(sel);
+            if (el && el.textContent) {
+              const t = el.textContent.trim();
+              if (t.length > 3) return t;
+            }
           }
-        }
+          return null;
+        };
 
-        let price = 0;
+        let title =
+          pickText([
+            "#productTitle",
+            ".product-title",
+            "h1 span",
+            ".a-size-large",
+          ]) || "Prodotto non trovato";
+
+        // Prezzo
         const priceSelectors = [
-          ".a-price-whole",
           ".a-price .a-offscreen",
           "#price_inside_buybox",
           ".a-price-range .a-price .a-offscreen",
+          ".a-price-whole",
           '[data-testid="price-current"]',
         ];
+        let priceRaw = pickText(priceSelectors) || "0";
 
-        for (const selector of priceSelectors) {
-          const priceElement = document.querySelector(selector);
-          if (priceElement) {
-            const priceText = (
-              priceElement.innerText ||
-              priceElement.textContent ||
-              ""
-            ).trim();
-
-            // Mantieni solo cifre, punti e virgole
-            let cleaned = priceText.replace(/[^\d.,]/g, "");
-
-            /*
-              Casi:
-              - "1.359,00"  -> formato EU (punto = migliaia, virgola = decimale)
-              - "1,359.00"  -> formato US (virgola = migliaia, punto = decimale)
-              - "1359,00"   -> EU senza separatore migliaia
-              - "1359.00"   -> US senza separatore migliaia
-              - "1.359"     -> probabile 1359 (niente decimali visibili)
-            */
-            if (cleaned.includes(".") && cleaned.includes(",")) {
-              if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
-                // Formato EU
-                cleaned = cleaned.replace(/\./g, "").replace(",", ".");
-              } else {
-                // Formato US
-                cleaned = cleaned.replace(/,/g, "");
-              }
-            } else if (cleaned.includes(",")) {
-              // Solo virgola: se le ultime 2 cifre dopo la virgola => decimali
-              const parts = cleaned.split(",");
-              if (parts[parts.length - 1].length === 2) {
-                cleaned = parts.join(".");
-              } else {
-                cleaned = cleaned.replace(/,/g, "");
-              }
-            } else if (cleaned.includes(".")) {
-              // Solo punto: se ultimo blocco ha 2 cifre => decimali, altrimenti è migliaia
-              const parts = cleaned.split(".");
-              if (parts[parts.length - 1].length !== 2) {
-                cleaned = parts.join(""); // trattiamo i punti come separatori migliaia
-              }
-            }
-
-            const parsed = parseFloat(cleaned);
-            if (!isNaN(parsed) && parsed > 0) {
-              price = parsed;
-              break;
-            }
+        let cleaned = priceRaw.replace(/[^\d.,]/g, "");
+        if (cleaned.includes(".") && cleaned.includes(",")) {
+          if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+            cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+          } else {
+            cleaned = cleaned.replace(/,/g, "");
           }
+        } else if (cleaned.includes(",")) {
+          const parts = cleaned.split(",");
+          if (parts[parts.length - 1].length === 2) cleaned = parts.join(".");
+          else cleaned = cleaned.replace(/,/g, "");
+        } else if (cleaned.includes(".")) {
+          const parts = cleaned.split(".");
+          if (parts[parts.length - 1].length !== 2) cleaned = parts.join("");
         }
+        let price = parseFloat(cleaned);
+        if (isNaN(price) || price < 0) price = 0;
 
         const specs = [];
+        document
+          .querySelectorAll("#feature-bullets ul li span")
+          .forEach((b) => {
+            const txt = b.innerText?.trim();
+            if (
+              txt &&
+              txt.length > 10 &&
+              !/Visualizza|Mostra/i.test(txt) &&
+              specs.length < 8
+            ) {
+              specs.push(txt);
+            }
+          });
 
-        // Feature bullets
-        const featureBullets = document.querySelectorAll(
-          "#feature-bullets ul li span"
-        );
-        featureBullets.forEach((bullet) => {
-          const text = bullet.innerText?.trim();
-          if (
-            text &&
-            text.length > 10 &&
-            !text.includes("Visualizza") &&
-            !text.includes("Mostra")
-          ) {
-            specs.push(text);
-          }
-        });
-
-        // Technical details
-        const techSpecs = document.querySelectorAll(
-          "#productDetails_techSpec_section_1 tr"
-        );
-        techSpecs.forEach((row) => {
-          const label = row.querySelector("td:first-child")?.innerText?.trim();
-          const value = row.querySelector("td:last-child")?.innerText?.trim();
-          if (label && value && label.length < 50) {
-            specs.push(`${label}: ${value}`);
-          }
-        });
+        document
+          .querySelectorAll("#productDetails_techSpec_section_1 tr")
+          .forEach((row) => {
+            if (specs.length >= 8) return;
+            const label = row
+              .querySelector("td:first-child")
+              ?.textContent?.trim();
+            const value = row
+              .querySelector("td:last-child")
+              ?.textContent?.trim();
+            if (label && value && label.length < 50) {
+              specs.push(`${label}: ${value}`);
+            }
+          });
 
         let imageUrl = "";
-        const imageSelectors = [
+        for (const sel of [
           "#landingImage",
           "#imgTagWrapperId img",
           ".a-dynamic-image",
-        ];
-
-        for (const selector of imageSelectors) {
-          const imageElement = document.querySelector(selector);
-          if (imageElement && imageElement.src) {
-            imageUrl = imageElement.src;
+        ]) {
+          const el = document.querySelector(sel);
+          if (el && el instanceof HTMLImageElement && el.src) {
+            imageUrl = el.src;
             break;
           }
         }
@@ -151,25 +212,36 @@ class AmazonScraper {
         return {
           title,
           price,
-          specifications: specs.slice(0, 8),
+          specifications: specs,
           imageUrl,
         };
       });
 
       return productData;
-    } catch (error) {
-      console.error("Errore durante lo scraping:", error);
+    } catch (err) {
+      console.error("[SCRAPER] Puppeteer error:", err?.message);
+
+      // Fallback leggero
+      const fallback = await lightweightFetch(url);
+      if (fallback) {
+        console.warn("[SCRAPER] Using lightweight fallback");
+        return fallback;
+      }
+
       throw new Error("Impossibile recuperare i dati del prodotto");
     } finally {
-      await browser.close();
+      try {
+        await page.close();
+      } catch {
+        /* ignore */
+      }
     }
   }
 }
 
 // Handler per Vercel
 export default async function handler(req, res) {
-  // Cors headers
-  res.setHeader("Access-Control-Allow-Credentials", true);
+  res.setHeader("Access-Control-Allow-Credentials", "true");
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader(
     "Access-Control-Allow-Methods",
@@ -184,14 +256,12 @@ export default async function handler(req, res) {
     res.status(200).end();
     return;
   }
-
   if (req.method !== "POST") {
     return res.status(405).json({ error: "Method not allowed" });
   }
 
   try {
-    const { url } = req.body;
-
+    const { url } = req.body || {};
     const isValidAmazonUrl =
       url &&
       (url.includes("amazon.") ||
@@ -202,12 +272,22 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: "URL Amazon non valido" });
     }
 
+    // Flag debug per bypass (facoltativo)
+    if (process.env.AMAZON_SCRAPER_DEBUG === "1") {
+      return res.json({
+        title: "DEBUG MODE PRODUCT",
+        price: 0,
+        specifications: ["Debug spec A", "Debug spec B"],
+        imageUrl: "",
+        _debug: true,
+      });
+    }
+
     const scraper = new AmazonScraper();
     const productInfo = await scraper.scrapeProduct(url);
-
     res.json(productInfo);
   } catch (error) {
-    console.error("Errore scraping:", error);
+    console.error("[SCRAPER] Final error:", error?.message);
     res.status(500).json({ error: "Errore nel recupero dei dati" });
   }
 }

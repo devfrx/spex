@@ -5,7 +5,7 @@ import chromium from "@sparticuz/chromium";
   Config Vercel (Node runtime + region vicina + maxDuration già in vercel.json)
 */
 export const config = {
-  runtime: "nodejs18.x",
+  runtime: "nodejs",
   regions: ["fra1"],
 };
 

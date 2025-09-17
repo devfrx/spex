@@ -263,6 +263,7 @@
     import { ComponentCategory, Component, AmazonProductInfo } from '@/interfaces/builds';
     import ComponentCard from '@/components/ComponentCard.vue';
     import BaseModal from '@/components/BaseModal.vue';
+    import { shortenProductTitle } from "@/composables/heuristicTitle";
 
     const route = useRoute();
     const router = useRouter();
@@ -456,7 +457,10 @@
     const applyAmazonData = () => {
         if (!amazonProductInfo.value) return;
 
-        editForm.value.model = amazonProductInfo.value.title;
+        editForm.value.model = shortenProductTitle(
+        amazonProductInfo.value.title,
+        editForm.value.category
+      );
         editForm.value.price = amazonProductInfo.value.price;
 
         if (amazonProductInfo.value.specifications?.length) {

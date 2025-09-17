@@ -4,6 +4,8 @@ import {
   ComponentCategory,
   AmazonProductInfo,
 } from "@/interfaces/builds";
+import { shortenProductTitle } from "@/composables/heuristicTitle";
+
 
 export const useComponentsStore = defineStore("components", {
   state: () => ({
@@ -132,11 +134,12 @@ export const useComponentsStore = defineStore("components", {
       amazonUrl: string
     ): Promise<Component> {
       const productInfo = await this.fetchAmazonProductInfo(amazonUrl);
+      const modelShort = shortenProductTitle(productInfo.title, category);
 
       return this.createComponent({
         category,
         title: this.getCategoryDisplayName(category),
-        model: productInfo.title,
+        model: modelShort,
         specifications: productInfo.specifications,
         price: productInfo.price,
         amazonUrl,

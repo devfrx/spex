@@ -1,7 +1,9 @@
 {
   "functions": {
     "api/amazon/product.js": {
-      "maxDuration": 30
+      "runtime": "nodejs",
+      "maxDuration": 30,
+      "memory": 1024
     }
   },
   "rewrites": [

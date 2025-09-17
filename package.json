@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "dev:frontend": "vite", 
+    "dev:frontend": "vite",
     "build": "vue-tsc && vite build",
     "preview": "vite preview",
     "test:e2e": "cypress run",
@@ -50,6 +50,9 @@
   },
   "overrides": {
     "rollup": "4.44.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
   },
   "description": "An Ionic project"
 }

@@ -68,7 +68,7 @@
                                         <Icon :icon="getCategoryIcon(category)" class="category-icon" />
                                         <span class="category-name">{{ getCategoryName(category) }}</span>
                                         <span class="component-count">({{ getComponentsByCategory(category).length
-                                            }})</span>
+                                        }})</span>
                                     </div>
                                     <button @click="addComponentToCategory(category)" class="add-category-btn">
                                         <Icon icon="mdi:plus" />
@@ -162,7 +162,7 @@
                                 @blur="fetchProductInfo" />
                             <button v-if="amazonUrl" @click="fetchProductInfo" :disabled="componentsStore.loading"
                                 class="fetch-btn">
-                                <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
+                                <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:download'"
                                     :class="{ 'spin': componentsStore.loading }" />
                             </button>
                         </div>
@@ -317,7 +317,6 @@
 
     const editComponent = async (component: Component) => {
         router.push(`/components/${component.id}/edit`);
-        componentsStore.updateComponent(component.id, component);
     };
 
     const removeSpecificComponent = async (category: ComponentCategory, component: Component) => {
@@ -395,17 +394,15 @@
         justify-content: center;
         width: 32px;
         height: 32px;
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+        background: var(--color-success);
         border-radius: var(--radius-md);
-        color: var(--color-primary);
+        color: var(--color-text);
         cursor: pointer;
         transition: var(--transition-all);
     }
 
     .add-category-btn:hover {
         background: rgba(var(--color-primary-rgb), 0.2);
-        border-color: rgba(var(--color-primary-rgb), 0.5);
     }
 
     .category-components {
@@ -414,8 +411,8 @@
     }
 
     .component-card {
-        background: rgba(var(--color-primary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.1);
+        background: rgba(var(--color-primary-700-rgb), 0.2);
+        border: 1px solid rgba(var(--color-primary-500-rgb), 0.4);
         border-radius: var(--radius-lg);
         padding: var(--space-4);
         transition: var(--transition-all);
@@ -816,16 +813,15 @@
         justify-content: center;
         width: 40px;
         height: 40px;
-        background: rgba(var(--color-info-rgb), 0.1);
-        border: 1px solid rgba(var(--color-info-rgb), 0.3);
+        background: var(--color-warning);
         border-radius: var(--radius-md);
-        color: var(--color-info);
+        color: var(--color-text);
         cursor: pointer;
         transition: var(--transition-all);
     }
 
     .fetch-btn:hover {
-        background: rgba(var(--color-info-rgb), 0.2);
+        background: rgba(var(--color-warning-rgb), 0.5);
     }
 
     .fetch-btn:disabled {

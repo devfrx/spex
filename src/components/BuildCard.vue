@@ -131,7 +131,7 @@
         const completion = completionPercentage.value;
         if (completion === 100) return 'Completa';
         if (completion >= 70) return 'Quasi Pronta';
-        if (completion >= 30) return 'In Progresso';
+        if (completion > 0) return 'In Progresso';
         return 'Iniziata';
     });
 

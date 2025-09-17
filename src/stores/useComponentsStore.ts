@@ -28,12 +28,18 @@ export const useComponentsStore = defineStore("components", {
       this.error = null;
 
       try {
-        // Chiamata al backend invece del mock
-        const response = await fetch("/api/amazon/product", {
+        // Usa variabile d'ambiente se frontend è separato, altrimenti path relativo
+        const apiBase = (import.meta.env.VITE_API_BASE_URL || "").replace(
+          /\/$/,
+          ""
+        );
+        const endpoint = apiBase
+          ? `${apiBase}/api/amazon/product`
+          : "/api/amazon/product";
+
+        const response = await fetch(endpoint, {
           method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ url }),
         });
 
@@ -42,7 +48,7 @@ export const useComponentsStore = defineStore("components", {
         }
 
         const productInfo = await response.json();
-        return productInfo;
+        return productInfo as AmazonProductInfo;
       } catch (error) {
         console.error("Errore fetching Amazon:", error);
         this.error = "Errore nel recupero delle informazioni da Amazon";

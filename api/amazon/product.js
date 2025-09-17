@@ -88,20 +88,21 @@ async function lightweightFetch(url) {
 
 class AmazonScraper {
   async scrapeProduct(url) {
-    const browser = await getBrowser();
-    const page = await browser.newPage();
-
-    // Blocca risorse pesanti
-    await page.setRequestInterception(true);
-    page.on("request", (req) => {
-      const type = req.resourceType();
-      if (["image", "stylesheet", "font", "media"].includes(type)) {
-        return req.abort();
-      }
-      req.continue();
-    });
-
+    let page;
     try {
+      const browser = await getBrowser();
+      page = await browser.newPage();
+
+      // Blocca risorse pesanti
+      await page.setRequestInterception(true);
+      page.on("request", (req) => {
+        const type = req.resourceType();
+        if (["image", "stylesheet", "font", "media"].includes(type)) {
+          return req.abort();
+        }
+        req.continue();
+      });
+
       await page.setUserAgent(
         "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0 Safari/537.36"
       );
@@ -120,11 +121,10 @@ class AmazonScraper {
           const btn =
             document.querySelector("#sp-cc-accept") ||
             document.querySelector('input[name="accept"]');
-          if (btn) (btn as HTMLElement).click();
+          if (btn) (btn).click();
         });
       } catch {}
 
-      // Attendi che almeno uno dei blocchi dettagli appaia (con fallback)
       await Promise.race([
         page.waitForSelector("#feature-bullets", { timeout: 4000 }),
         page.waitForSelector("#detailBullets_feature_div", { timeout: 4000 }),
@@ -133,7 +133,6 @@ class AmazonScraper {
         page.waitForTimeout(2000),
       ]);
 
-      // Piccolo delay per contenuti asincroni minimi
       await page.waitForTimeout(600);
 
       const productData = await page.evaluate(() => {
@@ -149,12 +148,8 @@ class AmazonScraper {
         };
 
         let title =
-          pickText([
-            "#productTitle",
-            ".product-title",
-            "h1 span",
-            ".a-size-large",
-          ]) || "Prodotto non trovato";
+          pickText(["#productTitle", ".product-title", "h1 span", ".a-size-large"]) ||
+          "Prodotto non trovato";
 
         // Prezzo
         const priceSelectors = [
@@ -192,8 +187,6 @@ class AmazonScraper {
 
         // Specifiche
         const specs = [];
-
-        // Feature bullets
         document
           .querySelectorAll("#feature-bullets ul li span, #featurebullets_feature_div ul li span")
           .forEach((b) => {
@@ -203,19 +196,16 @@ class AmazonScraper {
             }
           });
 
-        // Detail bullets "Etichetta: valore"
         document
           .querySelectorAll("#detailBullets_feature_div li span.a-list-item")
           .forEach((li) => {
             if (specs.length >= 8) return;
             const txt = li.textContent?.replace(/\s+/g, " ").trim() || "";
-            // Es: "Marca: AMD"
             if (txt.includes(":") && txt.length > 6 && txt.length < 140) {
               specs.push(txt);
             }
           });
 
-        // Technical specs tables
         document
           .querySelectorAll(
             "#productDetails_techSpec_section_1 tr, #productDetails_techSpec_section_2 tr, #productDetails_detailBullets_sections1 tr"
@@ -229,7 +219,7 @@ class AmazonScraper {
             }
           });
 
-        // Immagine prodotto: prova src, data-old-hires, data-a-dynamic-image
+        // Immagine
         let imageUrl = "";
         const img =
           document.querySelector("#landingImage") ||
@@ -260,21 +250,19 @@ class AmazonScraper {
 
       return productData;
     } catch (err) {
-      console.error("[SCRAPER] Puppeteer error:", err?.message);
-
-      // Fallback leggero
+      console.error("[SCRAPER] Launch/Run error:", err?.message || err);
+      // Fallback leggero anche se fallisce il launch
       const fallback = await lightweightFetch(url);
       if (fallback) {
-        console.warn("[SCRAPER] Using lightweight fallback");
+        console.warn("[SCRAPER] Using lightweight fallback (launch/run failure)");
         return fallback;
       }
-
-      throw new Error("Impossibile recuperare i dati del prodotto");
+      throw err;
     } finally {
-      try {
-        await page.close();
-      } catch {
-        /* ignore */
+      if (page) {
+        try {
+          await page.close();
+        } catch {}
       }
     }
   }

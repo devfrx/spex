@@ -15,12 +15,14 @@ export interface PCBuild {
   id: string;
   name: string;
   description?: string;
-  components: Component[];
+  // Cambiamo da array semplice a mappa di array per categoria
+  componentsByCategory: Record<ComponentCategory, Component[]>;
   totalPrice: number;
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Manteniamo l'enum esistente
 export enum ComponentCategory {
   CASE = "case",
   CPU = "cpu",

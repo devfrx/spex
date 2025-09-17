@@ -31,7 +31,7 @@
                             <div class="stat-card">
                                 <Icon icon="mdi:memory" class="stat-icon" />
                                 <div class="stat-info">
-                                    <span class="stat-value">{{ build.components.length }}</span>
+                                    <span class="stat-value">{{ totalComponentsCount }}</span>
                                     <span class="stat-label">Componenti</span>
                                 </div>
                             </div>
@@ -45,25 +45,15 @@
                             <div class="stat-card">
                                 <Icon icon="mdi:chart-donut" class="stat-icon" />
                                 <div class="stat-info">
-                                    <span class="stat-value">{{ getCompletionPercentage() }}%</span>
+                                    <span class="stat-value">{{ getCompletionPercentage }}%</span>
                                     <span class="stat-label">Completamento</span>
                                 </div>
                             </div>
                         </div>
 
-                        <!-- Progress Bar -->
-                        <div class="completion-progress">
-                            <div class="progress-header">
-                                <span class="progress-label">Completamento Build</span>
-                                <span class="progress-value">{{ getCompletionPercentage() }}%</span>
-                            </div>
-                            <div class="progress-bar">
-                                <div class="progress-fill" :style="{ width: getCompletionPercentage() + '%' }"></div>
-                            </div>
-                        </div>
                     </div>
 
-                    <!-- Components Grid -->
+                    <!-- Components Section -->
                     <div class="components-section">
                         <div class="section-header">
                             <h2>Componenti Build</h2>
@@ -72,63 +62,64 @@
 
                         <div class="components-grid">
                             <!-- Template per ogni categoria -->
-                            <div v-for="category in allCategories" :key="category" class="component-slot">
-                                <div class="component-card"
-                                    :class="{ 'has-component': getComponentByCategory(category) }">
-                                    <div class="card-header">
-                                        <div class="category-info">
-                                            <Icon :icon="getCategoryIcon(category)" class="category-icon" />
-                                            <span class="category-name">{{ getCategoryName(category) }}</span>
-                                        </div>
-                                        <div class="status-indicator"
-                                            :class="{ 'filled': getComponentByCategory(category) }">
-                                            <Icon
-                                                :icon="getComponentByCategory(category) ? 'mdi:check-circle' : 'mdi:circle-outline'" />
-                                        </div>
+                            <div v-for="category in allCategories" :key="category" class="component-category">
+                                <div class="category-header">
+                                    <div class="category-info">
+                                        <Icon :icon="getCategoryIcon(category)" class="category-icon" />
+                                        <span class="category-name">{{ getCategoryName(category) }}</span>
+                                        <span class="component-count">({{ getComponentsByCategory(category).length
+                                            }})</span>
                                     </div>
+                                    <button @click="addComponentToCategory(category)" class="add-category-btn">
+                                        <Icon icon="mdi:plus" />
+                                    </button>
+                                </div>
 
-                                    <div class="card-content">
-                                        <div v-if="getComponentByCategory(category)" class="component-content">
+                                <!-- Lista componenti per categoria -->
+                                <div v-if="getComponentsByCategory(category).length > 0" class="category-components">
+                                    <div v-for="(component, index) in getComponentsByCategory(category)"
+                                        :key="component.id" class="component-card">
+                                        <div class="component-content">
+                                            <div class="component-img">
+                                                <img v-if="component.imageUrl" :src="component.imageUrl"
+                                                    :alt="component.model" />
+                                                <div v-else class="no-image">
+                                                    <Icon icon="mdi:package-variant" class="no-image-icon" />
+                                                </div>
+                                            </div>
+
                                             <div class="component-info">
-                                                <h3 class="component-name">{{ getComponentByCategory(category)!.model }}
-                                                </h3>
+                                                <h3 class="component-name">{{ component.model }}</h3>
 
-                                                <div v-if="getComponentByCategory(category)!.specifications?.length"
-                                                    class="component-specs">
+                                                <div v-if="component.specifications?.length" class="component-specs">
                                                     <div class="specs-list">
-                                                        <span
-                                                            v-for="spec in getComponentByCategory(category)!.specifications!.slice(0, 2)"
+                                                        <span v-for="spec in component.specifications.slice(0, 2)"
                                                             :key="spec" class="spec-tag">
                                                             {{ spec }}
                                                         </span>
-                                                        <span
-                                                            v-if="getComponentByCategory(category)!.specifications!.length > 2"
+                                                        <span v-if="component.specifications.length > 2"
                                                             class="spec-more">
-                                                            +{{ getComponentByCategory(category)!.specifications!.length
-                                                                - 2 }}
+                                                            +{{ component.specifications.length - 2 }}
                                                         </span>
                                                     </div>
                                                 </div>
 
                                                 <div class="component-footer">
                                                     <div class="price-section">
-                                                        <span class="price">€{{
-                                                            getComponentByCategory(category)!.price.toFixed(2) }}</span>
+                                                        <span class="price">€{{ component.price.toFixed(2) }}</span>
                                                     </div>
 
                                                     <div class="component-actions">
-                                                        <a v-if="getComponentByCategory(category)!.amazonUrl"
-                                                            :href="getComponentByCategory(category)!.amazonUrl"
-                                                            target="_blank" class="amazon-link" title="Vedi su Amazon">
+                                                        <a v-if="component.amazonUrl" :href="component.amazonUrl"
+                                                            target="_blank" class="action-btn amazon-link"
+                                                            title="Vedi su Amazon">
                                                             <Icon icon="mdi:shopping" />
                                                         </a>
-                                                        <button
-                                                            @click="editComponent(getComponentByCategory(category)!)"
-                                                            class="action-btn" title="Modifica">
+                                                        <button @click="editComponent(component)"
+                                                            class="action-btn edit" title="Modifica">
                                                             <Icon icon="mdi:pencil" />
                                                         </button>
-                                                        <button
-                                                            @click="removeComponent(getComponentByCategory(category)!)"
+                                                        <button @click="removeSpecificComponent(category, component)"
                                                             class="action-btn danger" title="Rimuovi">
                                                             <Icon icon="mdi:trash-can" />
                                                         </button>
@@ -136,26 +127,20 @@
                                                 </div>
                                             </div>
                                         </div>
-
-                                        <div v-else class="empty-slot">
-                                            <div class="empty-content">
-                                                <Icon icon="mdi:plus-circle-outline" class="empty-icon" />
-                                                <p class="empty-text">Nessun componente</p>
-                                                <button @click="addComponentToCategory(category)"
-                                                    class="add-component-btn">
-                                                    <Icon icon="mdi:plus" />
-                                                    Aggiungi {{ getCategoryName(category) }}
-                                                </button>
-                                            </div>
-                                        </div>
                                     </div>
+                                </div>
+
+                                <!-- Empty state per categoria -->
+                                <div v-else class="empty-category">
+                                    <Icon icon="mdi:plus-circle-outline" class="empty-icon" />
+                                    <p class="empty-text">Nessun {{ getCategoryName(category).toLowerCase() }}</p>
                                 </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <!-- Add Component Modal -->
+                <!-- Add Component Modal - manteniamo la stessa logica -->
                 <BaseModal v-model="showAddComponentModal" title="Aggiungi Componente" icon="mdi:package-variant-plus"
                     size="md" :confirm-disabled="!selectedCategory || !amazonUrl || !productInfo"
                     :loading="componentsStore.loading" confirm-text="Aggiungi Componente" @confirm="confirmAddComponent"
@@ -232,8 +217,16 @@
 
     const allCategories = Object.values(ComponentCategory);
 
-    const getComponentByCategory = (category: ComponentCategory) => {
-        return build.value?.components.find(c => c.category === category);
+    // Nuovo computed per contare tutti i componenti
+    const totalComponentsCount = computed(() => {
+        if (!build.value) return 0;
+        return buildsStore.getAllComponents(build.value).length;
+    });
+
+    // Metodo per ottenere componenti per categoria
+    const getComponentsByCategory = (category: ComponentCategory) => {
+        if (!build.value) return [];
+        return buildsStore.getComponentsByCategory(build.value, category);
     };
 
     const getCategoryName = (category: ComponentCategory) => {
@@ -258,7 +251,7 @@
         return icons[category] || 'mdi:package-variant';
     };
 
-    const getCompletionPercentage = () => {
+    const getCompletionPercentage = computed(() => {
         if (!build.value) return 0;
         const essentialCategories = [
             ComponentCategory.CPU,
@@ -268,10 +261,13 @@
             ComponentCategory.PSU,
             ComponentCategory.CASE
         ];
-        const presentCategories = build.value.components.map(c => c.category);
-        const matches = essentialCategories.filter(cat => presentCategories.includes(cat));
-        return Math.round((matches.length / essentialCategories.length) * 100);
-    };
+
+        const filledCategories = essentialCategories.filter(cat =>
+            getComponentsByCategory(cat).length > 0
+        );
+
+        return Math.round((filledCategories.length / essentialCategories.length) * 100);
+    });
 
     const goBack = () => {
         router.push('/builds');
@@ -320,16 +316,16 @@
     };
 
     const editComponent = async (component: Component) => {
-        // Implementa la logica di edit
         router.push(`/components/${component.id}/edit`);
+        componentsStore.updateComponent(component.id, component);
     };
 
-    const removeComponent = async (component: Component) => {
+    const removeSpecificComponent = async (category: ComponentCategory, component: Component) => {
         if (!build.value) return;
 
         if (confirm(`Vuoi rimuovere ${component.model} dalla build?`)) {
             try {
-                await buildsStore.removeComponentFromBuild(build.value.id, component.id);
+                await buildsStore.removeSpecificComponentFromBuild(build.value.id, category, component.id);
             } catch (error) {
                 console.error('Errore nella rimozione:', error);
             }
@@ -340,6 +336,8 @@
         if (build.value) {
             buildsStore.setCurrentBuild(build.value);
         }
+        // Esegui migrazione se necessario
+        buildsStore.migrateLegacyBuilds();
     });
 
     watch(amazonUrl, () => {
@@ -348,6 +346,241 @@
 </script>
 
 <style scoped>
+    /* Mantieni gli stili esistenti e aggiungi questi nuovi */
+
+    .component-category {
+        background: rgba(var(--color-surface-dark-rgb), 0.8);
+        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+        border-radius: var(--radius-xl);
+        padding: var(--space-4);
+        backdrop-filter: blur(20px);
+        margin-bottom: var(--space-4);
+    }
+
+    .category-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: var(--space-4);
+        padding-bottom: var(--space-3);
+        border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.1);
+    }
+
+    .category-info {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+    }
+
+    .category-icon {
+        font-size: 1.25rem;
+        color: var(--color-primary);
+    }
+
+    .category-name {
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
+    }
+
+    .component-count {
+        font-size: var(--font-size-sm);
+        color: var(--color-text-muted);
+        font-weight: var(--font-weight-normal);
+    }
+
+    .add-category-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: rgba(var(--color-primary-rgb), 0.1);
+        border: 1px solid rgba(var(--color-primary-rgb), 0.3);
+        border-radius: var(--radius-md);
+        color: var(--color-primary);
+        cursor: pointer;
+        transition: var(--transition-all);
+    }
+
+    .add-category-btn:hover {
+        background: rgba(var(--color-primary-rgb), 0.2);
+        border-color: rgba(var(--color-primary-rgb), 0.5);
+    }
+
+    .category-components {
+        display: grid;
+        gap: var(--space-3);
+    }
+
+    .component-card {
+        background: rgba(var(--color-primary-rgb), 0.05);
+        border: 1px solid rgba(var(--color-primary-rgb), 0.1);
+        border-radius: var(--radius-lg);
+        padding: var(--space-4);
+        transition: var(--transition-all);
+    }
+
+    .component-card:hover {
+        background: rgba(var(--color-primary-rgb), 0.08);
+        border-color: rgba(var(--color-primary-rgb), 0.2);
+    }
+
+    .component-content {
+        display: flex;
+        gap: var(--space-4);
+        align-items: flex-start;
+    }
+
+    .component-img {
+        width: 80px;
+        height: 80px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(var(--color-primary-rgb), 0.05);
+        border-radius: var(--radius-md);
+        overflow: hidden;
+        flex-shrink: 0;
+    }
+
+    .component-img img {
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain;
+    }
+
+    .no-image {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+    }
+
+    .no-image-icon {
+        font-size: 2rem;
+        color: var(--color-text-muted);
+        opacity: 0.5;
+    }
+
+    .component-info {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .component-name {
+        margin: 0 0 var(--space-2) 0;
+        font-size: var(--font-size-md);
+        font-weight: var(--font-weight-semibold);
+        color: var(--color-text-dark);
+        line-height: var(--line-height-tight);
+    }
+
+    .specs-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-1);
+        margin-bottom: var(--space-3);
+    }
+
+    .spec-tag {
+        background: rgba(var(--color-primary-rgb), 0.15);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-xs);
+        font-weight: var(--font-weight-medium);
+        color: var(--color-primary-light);
+    }
+
+    .spec-more {
+        background: rgba(var(--color-secondary-rgb), 0.1);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-sm);
+        font-size: var(--font-size-xs);
+        color: var(--color-text-muted);
+    }
+
+    .component-footer {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .price {
+        font-size: var(--font-size-lg);
+        font-weight: var(--font-weight-bold);
+        color: var(--color-success);
+    }
+
+    .component-actions {
+        display: flex;
+        gap: var(--space-2);
+    }
+
+    .action-btn {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 32px;
+        height: 32px;
+        background: rgba(var(--color-primary-rgb), 0.1);
+        border-radius: var(--radius-md);
+        color: var(--color-primary);
+        text-decoration: none;
+        cursor: pointer;
+        transition: var(--transition-all);
+    }
+
+    .action-btn.danger {
+        background: var(--color-error);
+        color: var(--color-text);
+    }
+
+    .action-btn.amazon-link {
+        background: var(--color-warning);
+        color: var(--color-text);
+    }
+
+
+    .action-btn.edit {
+        background: var(--color-accent-dark);
+        color: var(--color-text);
+    }
+
+    .action-btn:hover {
+        background: rgba(var(--color-primary-rgb), 0.2);
+        border-color: rgba(var(--color-primary-rgb), 0.4);
+    }
+
+    .action-btn.error:hover {
+        background: rgba(var(--color-danger-rgb), 0.2);
+        border-color: rgba(var(--color-danger-rgb), 0.4);
+    }
+
+    .empty-category {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: var(--space-8);
+        text-align: center;
+        opacity: 0.6;
+    }
+
+    .empty-icon {
+        font-size: 2rem;
+        color: var(--color-text-muted);
+        margin-bottom: var(--space-2);
+    }
+
+    .empty-text {
+        margin: 0;
+        color: var(--color-text-muted);
+        font-size: var(--font-size-sm);
+    }
+
+    /* Mantieni tutti gli altri stili esistenti */
     .build-detail-page {
         min-height: 100vh;
         background: var(--color-bg-dark);
@@ -367,7 +600,18 @@
             linear-gradient(rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px),
             linear-gradient(90deg, rgba(var(--color-primary-rgb), 0.03) 1px, transparent 1px);
         background-size: 60px 60px;
-        animation: gridMove 30s linear infinite;
+        animation: gridMove 20s linear infinite;
+        z-index: 1;
+    }
+
+    .bg-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: radial-gradient(circle at 30% 20%, rgba(var(--color-primary-rgb), 0.1) 0%, transparent 50%),
+            radial-gradient(circle at 70% 80%, rgba(var(--color-accent-rgb), 0.1) 0%, transparent 50%);
         z-index: 1;
     }
 
@@ -379,21 +623,6 @@
         100% {
             transform: translate(60px, 60px);
         }
-    }
-
-    .bg-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: radial-gradient(circle at 40% 30%,
-                rgba(var(--color-primary-rgb), 0.12) 0%,
-                transparent 50%),
-            radial-gradient(circle at 60% 70%,
-                rgba(var(--color-accent-rgb), 0.08) 0%,
-                transparent 50%);
-        z-index: 2;
     }
 
     /* Header */
@@ -424,9 +653,8 @@
         border: 1px solid rgba(var(--color-primary-rgb), 0.3);
         border-radius: var(--radius-lg);
         color: var(--color-primary-light);
-        text-decoration: none;
-        transition: var(--transition-all);
         cursor: pointer;
+        transition: var(--transition-all);
         font-size: var(--font-size-sm);
         font-weight: var(--font-weight-medium);
     }
@@ -515,48 +743,6 @@
         letter-spacing: var(--letter-spacing-wide);
     }
 
-    .completion-progress {
-        background: rgba(var(--color-surface-dark-rgb), 0.6);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-lg);
-        padding: var(--space-4);
-        backdrop-filter: blur(10px);
-    }
-
-    .progress-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: var(--space-3);
-    }
-
-    .progress-label {
-        font-size: var(--font-size-sm);
-        color: var(--color-text-muted);
-        text-transform: uppercase;
-        letter-spacing: var(--letter-spacing-wide);
-    }
-
-    .progress-value {
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-semibold);
-        color: var(--color-primary);
-    }
-
-    .progress-bar {
-        height: 8px;
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border-radius: var(--radius-full);
-        overflow: hidden;
-    }
-
-    .progress-fill {
-        height: 100%;
-        background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
-        border-radius: var(--radius-full);
-        transition: width 1s ease-out;
-    }
-
     /* Components Section */
     .components-section {
         margin-top: var(--space-8);
@@ -584,215 +770,10 @@
 
     .components-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-        gap: var(--space-6);
+        gap: var(--space-4);
     }
 
-    .component-card {
-        background: rgba(var(--color-surface-dark-rgb), 0.8);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-xl);
-        overflow: hidden;
-        transition: var(--transition-all);
-        backdrop-filter: blur(20px);
-    }
-
-    .component-card.has-component {
-        border-color: rgba(var(--color-success-rgb), 0.4);
-        box-shadow: 0 0 0 1px rgba(var(--color-success-rgb), 0.1);
-    }
-
-    .component-card:hover {
-        transform: translateY(-4px);
-        border-color: rgba(var(--color-primary-rgb), 0.4);
-        box-shadow: 0 12px 30px rgba(var(--color-primary-rgb), 0.15);
-    }
-
-    .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: var(--space-4);
-        border-bottom: 1px solid rgba(var(--color-primary-rgb), 0.1);
-    }
-
-    .category-info {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-    }
-
-    .category-icon {
-        font-size: 1.25rem;
-        color: var(--color-primary);
-    }
-
-    .category-name {
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-text-dark);
-    }
-
-    .status-indicator {
-        font-size: 1.25rem;
-        color: var(--color-text-muted);
-        transition: var(--transition-colors);
-    }
-
-    .status-indicator.filled {
-        color: var(--color-success);
-    }
-
-    .card-content {
-        padding: var(--space-4);
-        min-height: 120px;
-        display: flex;
-        align-items: center;
-    }
-
-    .component-content {
-        width: 100%;
-    }
-
-    .component-name {
-        margin: 0 0 var(--space-2) 0;
-        font-size: var(--font-size-lg);
-        font-weight: var(--font-weight-semibold);
-        color: var(--color-text-dark);
-        line-height: var(--line-height-tight);
-    }
-
-    .specs-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: var(--space-1);
-        margin-bottom: var(--space-3);
-    }
-
-    .spec-tag {
-        background: rgba(var(--color-primary-rgb), 0.15);
-        padding: var(--space-1) var(--space-2);
-        border-radius: var(--radius-sm);
-        font-size: var(--font-size-xs);
-        font-weight: var(--font-weight-medium);
-        color: var(--color-primary-light);
-    }
-
-    .spec-more {
-        background: rgba(var(--color-secondary-rgb), 0.1);
-        padding: var(--space-1) var(--space-2);
-        border-radius: var(--radius-sm);
-        font-size: var(--font-size-xs);
-        color: var(--color-text-muted);
-    }
-
-    .component-footer {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .price {
-        font-size: var(--font-size-lg);
-        font-weight: var(--font-weight-bold);
-        color: var(--color-success);
-    }
-
-    .component-actions {
-        display: flex;
-        gap: var(--space-2);
-    }
-
-    .amazon-link {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background: #ff9500;
-        border-radius: var(--radius-md);
-        color: var(--color-white);
-        text-decoration: none;
-        transition: var(--transition-all);
-    }
-
-    .amazon-link:hover {
-        background: #e8860d;
-        transform: scale(1.1);
-    }
-
-    .action-btn {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 32px;
-        height: 32px;
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border: none;
-        border-radius: var(--radius-md);
-        color: var(--color-text-dark);
-        cursor: pointer;
-        transition: var(--transition-all);
-    }
-
-    .action-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.2);
-        color: var(--color-primary);
-    }
-
-    .action-btn.danger:hover {
-        background: rgba(var(--color-error-rgb), 0.2);
-        color: var(--color-error);
-    }
-
-    /* Empty Slot */
-    .empty-slot {
-        width: 100%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .empty-content {
-        text-align: center;
-        padding: var(--space-4);
-    }
-
-    .empty-icon {
-        font-size: 2rem;
-        color: var(--color-text-muted);
-        opacity: 0.5;
-        margin-bottom: var(--space-2);
-    }
-
-    .empty-text {
-        margin: 0 0 var(--space-3) 0;
-        color: var(--color-text-muted);
-        font-size: var(--font-size-sm);
-    }
-
-    .add-component-btn {
-        display: inline-flex;
-        align-items: center;
-        gap: var(--space-2);
-        padding: var(--space-2) var(--space-4);
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.3);
-        border-radius: var(--radius-lg);
-        color: var(--color-primary);
-        cursor: pointer;
-        transition: var(--transition-all);
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
-    }
-
-    .add-component-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.2);
-        border-color: rgba(var(--color-primary-rgb), 0.5);
-        transform: translateY(-2px);
-    }
-
-    /* Modal */
+    /* Modal styling - mantieni gli stili esistenti */
     .form-group {
         margin-bottom: var(--space-4);
     }
@@ -805,8 +786,8 @@
         color: var(--color-text-dark);
     }
 
-    .form-input,
-    .form-select {
+    .form-select,
+    .form-input {
         width: 100%;
         padding: var(--space-3);
         background: rgba(var(--color-primary-rgb), 0.05);
@@ -817,8 +798,8 @@
         transition: var(--transition-all);
     }
 
-    .form-input:focus,
-    .form-select:focus {
+    .form-select:focus,
+    .form-input:focus {
         outline: none;
         border-color: rgba(var(--color-primary-rgb), 0.5);
         box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
@@ -835,20 +816,20 @@
         justify-content: center;
         width: 40px;
         height: 40px;
-        background: var(--color-primary);
-        border: none;
+        background: rgba(var(--color-info-rgb), 0.1);
+        border: 1px solid rgba(var(--color-info-rgb), 0.3);
         border-radius: var(--radius-md);
-        color: var(--color-white);
+        color: var(--color-info);
         cursor: pointer;
         transition: var(--transition-all);
     }
 
-    .fetch-btn:hover:not(:disabled) {
-        background: var(--color-primary-light);
+    .fetch-btn:hover {
+        background: rgba(var(--color-info-rgb), 0.2);
     }
 
     .fetch-btn:disabled {
-        opacity: var(--opacity-50);
+        opacity: 0.5;
         cursor: not-allowed;
     }
 
@@ -867,11 +848,11 @@
     }
 
     .product-preview {
-        background: rgba(var(--color-primary-rgb), 0.05);
-        border: 1px solid rgba(var(--color-primary-rgb), 0.2);
+        background: rgba(var(--color-info-rgb), 0.05);
+        border: 1px solid rgba(var(--color-info-rgb), 0.2);
         border-radius: var(--radius-lg);
         padding: var(--space-4);
-        margin: var(--space-4) 0;
+        margin-top: var(--space-4);
     }
 
     .preview-header {
@@ -879,8 +860,10 @@
         align-items: center;
         gap: var(--space-2);
         margin-bottom: var(--space-3);
-        font-weight: var(--font-weight-semibold);
-        color: var(--color-primary);
+        padding-bottom: var(--space-2);
+        border-bottom: 1px solid rgba(var(--color-info-rgb), 0.2);
+        color: var(--color-info);
+        font-weight: var(--font-weight-medium);
     }
 
     .preview-content p {
@@ -894,85 +877,5 @@
         flex-wrap: wrap;
         gap: var(--space-1);
         margin-top: var(--space-2);
-    }
-
-    .modal-footer {
-        display: flex;
-        gap: var(--space-3);
-        padding: var(--space-6);
-        border-top: 1px solid rgba(var(--color-primary-rgb), 0.1);
-        justify-content: flex-end;
-    }
-
-    .cancel-btn,
-    .confirm-btn {
-        padding: var(--space-3) var(--space-4);
-        border-radius: var(--radius-md);
-        font-weight: var(--font-weight-medium);
-        cursor: pointer;
-        transition: var(--transition-all);
-        font-size: var(--font-size-sm);
-    }
-
-    .cancel-btn {
-        background: rgba(var(--color-secondary-rgb), 0.1);
-        border: 1px solid rgba(var(--color-secondary-rgb), 0.3);
-        color: var(--color-text-muted);
-    }
-
-    .cancel-btn:hover {
-        background: rgba(var(--color-secondary-rgb), 0.2);
-        color: var(--color-text-dark);
-    }
-
-    .confirm-btn {
-        display: flex;
-        align-items: center;
-        gap: var(--space-2);
-        background: var(--color-primary);
-        border: 1px solid var(--color-primary);
-        color: var(--color-white);
-    }
-
-    .confirm-btn:hover:not(:disabled) {
-        background: var(--color-primary-light);
-        border-color: var(--color-primary-light);
-    }
-
-    .confirm-btn:disabled {
-        opacity: var(--opacity-50);
-        cursor: not-allowed;
-    }
-
-    /* Responsive */
-    @media (max-width: 768px) {
-        .overview-stats {
-            flex-direction: column;
-        }
-
-        .components-grid {
-            grid-template-columns: 1fr;
-        }
-
-        .header-content {
-            flex-wrap: wrap;
-            gap: var(--space-3);
-        }
-
-        .component-footer {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: var(--space-2);
-        }
-    }
-
-    @media (max-width: 480px) {
-        .modal-overlay {
-            padding: var(--space-2);
-        }
-
-        .component-actions {
-            flex-wrap: wrap;
-        }
     }
 </style>

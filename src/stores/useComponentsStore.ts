@@ -98,16 +98,20 @@ export const useComponentsStore = defineStore("components", {
       id: string,
       updates: Partial<Component>
     ): Promise<Component> {
-      const index = this.components.findIndex((c) => c.id === id);
-      if (index === -1) throw new Error("Componente non trovato");
+      const comp = this.components.find((c) => c.id === id);
+      if (!comp) throw new Error("Componente non trovato");
 
-      this.components[index] = {
-        ...this.components[index],
-        ...updates,
-        updatedAt: new Date(),
-      };
+      Object.assign(comp, updates, { updatedAt: new Date() });
 
-      return this.components[index];
+      // Allinea le build
+      try {
+        const { useBuildsStore } = await import("./useBuildsStore");
+        useBuildsStore().updateComponentReferences(comp);
+      } catch (e) {
+        console.warn("Sync build refs fallita:", e);
+      }
+
+      return comp;
     },
 
     async deleteComponent(id: string): Promise<void> {

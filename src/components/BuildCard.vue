@@ -1,4 +1,5 @@
 <template>
+    <!-- Mantieni la stessa template ma aggiorna la metrica dei componenti -->
     <div class="build-card" :class="{
         'create-card': isCreateCard,
         'clickable': clickable
@@ -44,7 +45,7 @@
                 <div class="build-metrics">
                     <div class="metric">
                         <Icon icon="mdi:memory" class="metric-icon" />
-                        <span class="metric-value">{{ build.components.length }}</span>
+                        <span class="metric-value">{{ totalComponentsCount }}</span>
                         <span class="metric-label">Componenti</span>
                     </div>
                     <div class="metric">
@@ -54,25 +55,25 @@
                     </div>
                 </div>
 
-                <div class="build-progress">
-                    <div class="progress-header">
+                <div class="progress-section">
+                    <div class="progress-info">
                         <span class="progress-label">Completamento</span>
                         <span class="progress-value">{{ completionPercentage }}%</span>
                     </div>
                     <div class="progress-bar">
-                        <div class="progress-fill" :style="{ width: completionPercentage + '%' }"></div>
+                        <div class="progress-fill" :style="{ width: `${completionPercentage}%` }"
+                            :class="buildStatusClass"></div>
                     </div>
                 </div>
+            </div>
 
-                <div class="creation-date" v-if="showDate">
+            <div class="card-footer" v-if="showDate">
+                <div class="creation-date">
                     <Icon icon="mdi:calendar" class="date-icon" />
-                    {{ formatDate(build.createdAt) }}
+                    <span>{{ formatDate(build.createdAt) }}</span>
                 </div>
             </div>
         </template>
-
-        <!-- Custom slot content -->
-        <slot v-else></slot>
     </div>
 </template>
 
@@ -113,9 +114,17 @@
         if (!props.build) return 0;
 
         const essentialCategories = ['cpu', 'motherboard', 'memory', 'storage_primary', 'psu', 'case'];
-        const presentCategories = props.build.components.map(c => c.category);
-        const matches = essentialCategories.filter(cat => presentCategories.includes(cat as any));
-        return Math.round((matches.length / essentialCategories.length) * 100);
+        const filledCategories = essentialCategories.filter(cat => {
+            const components = props.build?.componentsByCategory[cat as keyof typeof props.build.componentsByCategory];
+            return components && components.length > 0;
+        });
+
+        return Math.round((filledCategories.length / essentialCategories.length) * 100);
+    });
+
+    const totalComponentsCount = computed(() => {
+        if (!props.build) return 0;
+        return Object.values(props.build.componentsByCategory).flat().length;
     });
 
     const buildStatusText = computed(() => {
@@ -156,6 +165,7 @@
         }).format(new Date(date));
     };
 </script>
+
 
 <style scoped>
     .build-card {
@@ -393,6 +403,18 @@
         margin-bottom: var(--space-2);
     }
 
+    .progress-section {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+
+    .progress-info {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
     .progress-label {
         font-size: var(--font-size-xs);
         color: var(--color-text-muted);
@@ -418,6 +440,13 @@
         background: linear-gradient(90deg, var(--color-primary), var(--color-accent));
         border-radius: var(--radius-full);
         transition: width 1s ease-out;
+    }
+
+    .card-footer {
+        padding: var(--space-4);
+        border-top: 1px solid rgba(var(--color-primary-rgb), 0.1);
+        display: flex;
+        justify-content: flex-end;
     }
 
     .creation-date {

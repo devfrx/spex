@@ -62,11 +62,50 @@ class AmazonScraper {
         for (const selector of priceSelectors) {
           const priceElement = document.querySelector(selector);
           if (priceElement) {
-            const priceText =
-              priceElement.innerText || priceElement.textContent;
-            const priceMatch = priceText.match(/[\d,]+\.?\d*/);
-            if (priceMatch) {
-              price = parseFloat(priceMatch[0].replace(",", ""));
+            const priceText = (
+              priceElement.innerText ||
+              priceElement.textContent ||
+              ""
+            ).trim();
+
+            // Mantieni solo cifre, punti e virgole
+            let cleaned = priceText.replace(/[^\d.,]/g, "");
+
+            /*
+              Casi:
+              - "1.359,00"  -> formato EU (punto = migliaia, virgola = decimale)
+              - "1,359.00"  -> formato US (virgola = migliaia, punto = decimale)
+              - "1359,00"   -> EU senza separatore migliaia
+              - "1359.00"   -> US senza separatore migliaia
+              - "1.359"     -> probabile 1359 (niente decimali visibili)
+            */
+            if (cleaned.includes(".") && cleaned.includes(",")) {
+              if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+                // Formato EU
+                cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+              } else {
+                // Formato US
+                cleaned = cleaned.replace(/,/g, "");
+              }
+            } else if (cleaned.includes(",")) {
+              // Solo virgola: se le ultime 2 cifre dopo la virgola => decimali
+              const parts = cleaned.split(",");
+              if (parts[parts.length - 1].length === 2) {
+                cleaned = parts.join(".");
+              } else {
+                cleaned = cleaned.replace(/,/g, "");
+              }
+            } else if (cleaned.includes(".")) {
+              // Solo punto: se ultimo blocco ha 2 cifre => decimali, altrimenti è migliaia
+              const parts = cleaned.split(".");
+              if (parts[parts.length - 1].length !== 2) {
+                cleaned = parts.join(""); // trattiamo i punti come separatori migliaia
+              }
+            }
+
+            const parsed = parseFloat(cleaned);
+            if (!isNaN(parsed) && parsed > 0) {
+              price = parsed;
               break;
             }
           }

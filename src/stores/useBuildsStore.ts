@@ -86,6 +86,12 @@ export const useBuildsStore = defineStore("builds", {
       this.builds.splice(index, 1);
     },
 
+    async addBuild(build: PCBuild): Promise<void> {
+      const exists = this.builds.some((b) => b.id === build.id);
+      if (exists) throw new Error("Build con questo ID già esistente");
+      this.builds.push(build);
+    },
+
     async addComponentToBuild(
       buildId: string,
       component: Component

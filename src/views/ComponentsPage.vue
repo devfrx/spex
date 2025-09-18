@@ -979,6 +979,14 @@
         margin-bottom: var(--space-8);
     }
 
+    .empty-content {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        max-width: 500px;
+    }
+
     .empty-content h3 {
         font-size: var(--font-size-2xl);
         font-weight: var(--font-weight-semibold);

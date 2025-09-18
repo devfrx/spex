@@ -30,6 +30,10 @@
                             </div>
 
                             <div class="header-actions">
+                                <button @click="onChooseFile()" class="action-secondary import-btn">
+                                    <Icon icon="mdi:import" />
+                                    <span>Import</span>
+                                </button>
                                 <button @click="createNewBuild" class="action-primary">
                                     <Icon icon="mdi:plus" />
                                     <span>New Build</span>
@@ -141,12 +145,16 @@
                                     </div>
 
                                     <div class="card-actions">
-                                        <button @click.stop="editBuild(build)" class="action-btn" title="Edit">
-                                            <Icon icon="mdi:pencil" />
+                                        <button @click.stop="exportBuild(build.id)" class="action-btn warning"
+                                            title="Export">
+                                            <Icon icon="mdi:export" />
                                         </button>
                                         <button @click.stop="duplicateBuild(build)" class="action-btn"
                                             title="Duplicate">
                                             <Icon icon="mdi:content-copy" />
+                                        </button>
+                                        <button @click.stop="editBuild(build)" class="action-btn edit" title="Edit">
+                                            <Icon icon="mdi:pencil" />
                                         </button>
                                         <button @click.stop="deleteBuild(build)" class="action-btn danger"
                                             title="Delete">
@@ -261,6 +269,8 @@
     import { PCBuild } from '@/interfaces/builds';
     import BuildCard from '@/components/BuildCard.vue';
     import BaseModal from '@/components/BaseModal.vue';
+    import { exportBuild } from '@/composables/buildJsonExport';
+    import { pickAndImportBuild } from '@/composables/buildJsonImport';
 
     const router = useRouter();
     const buildsStore = useBuildsStore();
@@ -403,6 +413,21 @@
         const matches = essentialCategories.filter(cat => presentCategories.includes(cat));
         return Math.round((matches.length / essentialCategories.length) * 100);
     };
+
+
+    async function onChooseFile() {
+        try {
+            const ok = await pickAndImportBuild();
+            if (ok) {
+                alert('Build imported successfully!');
+            } else {
+                alert('Import cancelled or failed.');
+            }
+        } catch (err) {
+            console.error('Import error:', err);
+            alert('An error occurred during import.');
+        }
+    }
 
     const formatDate = (date: Date) => {
         return new Intl.DateTimeFormat('it-IT', {
@@ -574,6 +599,38 @@
     .action-primary:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.5);
+    }
+
+    .action-secondary {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-6);
+        background: var(--color-warning);
+        border: var(--border-thin) solid rgba(var(--color-warning-rgb), 0.2);
+        border-radius: var(--radius-lg);
+        color: var(--color-text-dark);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: var(--transition-medium);
+        box-shadow: 0 4px 12px rgba(var(--color-accent-rgb), 0.1);
+    }
+
+    .action-secondary:hover {
+        transform: translateY(-2px);
+        border-color: rgba(var(--color-primary-rgb), 0.4);
+        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.3);
+    }
+
+    .action-secondary.import-btn {
+        background: var(--color-success);
+        border-color: rgba(var(--color-success-rgb), 0.2);
+        color: var(--color-white);
+    }
+
+    .action-secondary.import-btn:hover {
+        border-color: rgba(var(--color-success-rgb), 0.4);
+        box-shadow: 0 8px 25px rgba(var(--color-success-rgb), 0.3);
     }
 
     /* Dashboard Layout */
@@ -980,14 +1037,42 @@
     }
 
     .action-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.2);
-        color: var(--color-primary);
         transform: translateY(-1px);
     }
 
-    .action-btn.danger:hover {
-        background: rgba(var(--color-error-rgb), 0.2);
+    .action-btn.edit {
+        background: rgba(var(--color-info-rgb), 0.1);
+        color: var(--color-info);
+    }
+
+    .action-btn.edit:hover {
+        background: var(--color-info);
+        color: var(--color-white);
+    }
+
+    .action-btn:hover {
+        background: var(--color-primary);
+        color: var(--color-white);
+    }
+
+    .action-btn.warning {
+        background: rgba(var(--color-warning-rgb), 0.1);
+        color: var(--color-warning);
+    }
+
+    .action-btn.warning:hover {
+        background: var(--color-warning);
+        color: var(--color-white);
+    }
+
+    .action-btn.danger {
+        background: rgba(var(--color-error-rgb), 0.1);
         color: var(--color-error);
+    }
+
+    .action-btn.danger:hover {
+        background: var(--color-error);
+        color: var(--color-white);
     }
 
     .card-content {

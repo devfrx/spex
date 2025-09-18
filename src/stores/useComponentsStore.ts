@@ -6,7 +6,6 @@ import {
 } from "@/interfaces/builds";
 import { shortenProductTitle } from "@/composables/heuristicTitle";
 
-
 export const useComponentsStore = defineStore("components", {
   state: () => ({
     components: [] as Component[],
@@ -127,6 +126,10 @@ export const useComponentsStore = defineStore("components", {
       if (index === -1) throw new Error("Componente non trovato");
 
       this.components.splice(index, 1);
+    },
+
+    addComponent(component: Component) {
+      this.components.push(component);
     },
 
     async createFromAmazonUrl(

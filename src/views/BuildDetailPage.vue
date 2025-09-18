@@ -31,6 +31,10 @@
                             </div>
 
                             <div class="header-actions">
+                                <button @click="exportBuild(buildId)" class="action-secondary export-btn">
+                                    <Icon icon="mdi:export" />
+                                    <span>Export</span>
+                                </button>
                                 <button @click="showAddComponentModal = true" class="action-primary">
                                     <Icon icon="mdi:plus" />
                                     <span>Add Component</span>
@@ -134,36 +138,44 @@
                                     <div v-if="getComponentsByCategory(category).length > 0" class="component-list">
                                         <div v-for="component in getComponentsByCategory(category)" :key="component.id"
                                             class="component-entry">
-
-                                            <div class="component-thumbnail">
-                                                <img v-if="component.imageUrl" :src="component.imageUrl"
-                                                    :alt="component.model" />
-                                                <div v-else class="thumbnail-placeholder">
-                                                    <Icon icon="mdi:package-variant" />
-                                                </div>
-                                            </div>
-
-                                            <div class="component-details">
-                                                <div class="component-primary">
-                                                    <h4 class="component-title">{{ component.model }}</h4>
-                                                    <div class="price-tag">€{{ component.price.toFixed(2) }}</div>
+                                            <div class="component-info">
+                                                <div class="component-thumbnail">
+                                                    <img v-if="component.imageUrl" :src="component.imageUrl"
+                                                        :alt="component.model" />
+                                                    <div v-else class="thumbnail-placeholder">
+                                                        <Icon icon="mdi:package-variant" />
+                                                    </div>
                                                 </div>
 
-                                                <div v-if="component.specifications?.length" class="component-specs">
-                                                    <div class="specs-container">
-                                                        <span v-for="spec in component.specifications.slice(0, 2)"
-                                                            :key="spec" class="spec-chip">
-                                                            {{ spec }}
-                                                        </span>
-                                                        <span v-if="component.specifications.length > 2"
-                                                            class="spec-overflow">
-                                                            +{{ component.specifications.length - 2 }}
-                                                        </span>
+                                                <div class="component-details">
+                                                    <div class="component-primary">
+                                                        <h4 class="component-title">{{ component.model }}</h4>
+                                                        <div class="price-tag">€{{ component.price.toFixed(2) }}</div>
+                                                    </div>
+
+                                                    <div v-if="component.specifications?.length"
+                                                        class="component-specs">
+                                                        <div class="specs-container">
+                                                            <span v-for="spec in component.specifications.slice(0, 2)"
+                                                                :key="spec" class="spec-chip">
+                                                                {{ spec }}
+                                                            </span>
+                                                            <span v-if="component.specifications.length > 2"
+                                                                class="spec-overflow">
+                                                                +{{ component.specifications.length - 2 }}
+                                                            </span>
+                                                        </div>
                                                     </div>
                                                 </div>
                                             </div>
-
                                             <div class="component-toolbar">
+
+                                                <button v-if="componentNotExists(component)"
+                                                    @click="componentsStore.addComponent(component)"
+                                                    class="tool-btn import-btn">
+                                                    <Icon icon="mdi:import" />
+                                                </button>
+
                                                 <a v-if="component.amazonUrl" :href="component.amazonUrl"
                                                     target="_blank" class="tool-btn external" title="View on Amazon">
                                                     <Icon icon="mdi:shopping" />
@@ -314,13 +326,14 @@
 </template>
 
 <script setup lang="ts">
-    import { ref, computed, onMounted, watch } from 'vue';
+    import { ref, computed, onMounted, watch, onBeforeUnmount } from 'vue';
     import { useRoute, useRouter } from 'vue-router';
     import { IonPage, IonContent } from '@ionic/vue';
     import { useBuildsStore } from '@/stores/useBuildsStore';
     import { useComponentsStore } from '@/stores/useComponentsStore';
     import { ComponentCategory, AmazonProductInfo, Component } from '@/interfaces/builds';
     import BaseModal from '@/components/BaseModal.vue';
+    import { exportBuild } from '@/composables/buildJsonExport';
 
     const route = useRoute();
     const router = useRouter();
@@ -334,7 +347,6 @@
     const amazonUrl = ref('');
     const productInfo = ref<AmazonProductInfo | null>(null);
     // debounce + request-sequencing to avoid race conditions
-    import { onBeforeUnmount } from 'vue';
     let debounceTimer: number | null = null;
     let fetchSeq = 0; // increasing sequence id for requests
 
@@ -401,19 +413,23 @@
         router.push('/builds');
     };
 
-    const fetchProductInfo = async () => {
-        if (!amazonUrl.value.trim()) {
-            productInfo.value = null;
-            return;
-        }
+    const componentNotExists = computed(() => {
+        return (component: Component) => !componentsStore.getComponentById(component.id);
+    });
 
-        try {
-            productInfo.value = await componentsStore.fetchAmazonProductInfo(amazonUrl.value);
-        } catch (error) {
-            console.error('Errore nel recupero info prodotto:', error);
-            productInfo.value = null;
-        }
-    };
+    // const fetchProductInfo = async () => {
+    //     if (!amazonUrl.value.trim()) {
+    //         productInfo.value = null;
+    //         return;
+    //     }
+
+    //     try {
+    //         productInfo.value = await componentsStore.fetchAmazonProductInfo(amazonUrl.value);
+    //     } catch (error) {
+    //         console.error('Errore nel recupero info prodotto:', error);
+    //         productInfo.value = null;
+    //     }
+    // };
 
     const addComponentToCategory = (category: ComponentCategory) => {
         selectedCategory.value = category;
@@ -687,6 +703,38 @@
     .action-primary:hover {
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.5);
+    }
+
+    .action-secondary {
+        display: flex;
+        align-items: center;
+        gap: var(--space-3);
+        padding: var(--space-3) var(--space-6);
+        background: var(--color-warning);
+        border: var(--border-thin) solid rgba(var(--color-warning-rgb), 0.2);
+        border-radius: var(--radius-lg);
+        color: var(--color-text-dark);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: var(--transition-medium);
+        box-shadow: 0 4px 12px rgba(var(--color-accent-rgb), 0.1);
+    }
+
+    .action-secondary:hover {
+        transform: translateY(-2px);
+        border-color: rgba(var(--color-primary-rgb), 0.4);
+        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.3);
+    }
+
+    .action-secondary.export-btn {
+        background: var(--color-info);
+        border-color: rgba(var(--color-info-rgb), 0.2);
+        color: var(--color-white);
+    }
+
+    .action-secondary.export-btn:hover {
+        border-color: rgba(var(--color-info-rgb), 0.4);
+        box-shadow: 0 8px 25px rgba(var(--color-info-rgb), 0.3);
     }
 
     /* Dashboard Layout */
@@ -988,12 +1036,14 @@
     /* Component List */
     .component-list {
         display: flex;
+        align-items: stretch;
         flex-direction: column;
         gap: var(--space-6);
     }
 
     .component-entry {
         display: flex;
+        flex-direction: column;
         align-items: flex-start;
         gap: var(--space-6);
         padding: var(--space-6);
@@ -1008,6 +1058,13 @@
         border-color: rgba(var(--color-primary-rgb), 0.3);
         transform: translateY(-2px);
         box-shadow: var(--shadow-lg);
+    }
+
+    .component-info {
+        display: flex;
+        align-items: center;
+        gap: var(--space-6);
+        width: 100%;
     }
 
     .component-thumbnail {
@@ -1099,24 +1156,27 @@
 
     .component-toolbar {
         display: flex;
-        flex-direction: column;
+        align-items: flex-end;
+        justify-content: flex-end;
+        flex-direction: row;
+        flex-wrap: wrap;
         gap: var(--space-2);
+        align-self: flex-end;
     }
 
     .tool-btn {
-        width: 36px;
-        height: 36px;
-        border-radius: var(--radius-md);
-        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.3);
-        background: rgba(var(--color-surface-dark-rgb), 0.6);
+        width: 40px;
+        height: 40px;
+        background: rgba(var(--color-primary-rgb), 0.1);
+        border: none;
+        border-radius: var(--radius-full);
         color: var(--color-text-muted);
         cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
         transition: var(--transition-fast);
-        text-decoration: none;
-        font-size: var(--font-size-md);
+        font-size: var(--font-size-sm);
     }
 
     .tool-btn:hover {
@@ -1124,25 +1184,39 @@
         box-shadow: var(--shadow-md);
     }
 
+    .tool-btn.import-btn {
+        background: rgba(var(--color-warning-rgb), 0.1);
+        color: var(--color-warning);
+    }
+
+    .tool-btn.import-btn:hover {
+        background: var(--color-warning);
+        color: var(--color-white);
+    }
+
     .tool-btn.external:hover {
         background: var(--color-warning);
-        border-color: var(--color-warning);
         color: var(--color-white);
-        box-shadow: 0 4px 12px rgba(var(--color-warning-rgb), 0.4);
+    }
+
+    .tool-btn.edit {
+        background: rgba(var(--color-info-rgb), 0.1);
+        color: var(--color-info);
     }
 
     .tool-btn.edit:hover {
         background: var(--color-info);
-        border-color: var(--color-info);
         color: var(--color-white);
-        box-shadow: 0 4px 12px rgba(var(--color-info-rgb), 0.4);
+    }
+
+    .tool-btn.remove {
+        background: rgba(var(--color-error-rgb), 0.1);
+        color: var(--color-error);
     }
 
     .tool-btn.remove:hover {
         background: var(--color-error);
-        border-color: var(--color-error);
         color: var(--color-white);
-        box-shadow: 0 4px 12px rgba(var(--color-error-rgb), 0.4);
     }
 
     /* Empty State */

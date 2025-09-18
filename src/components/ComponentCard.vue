@@ -82,6 +82,7 @@
 
 <script setup lang="ts">
     import { computed } from 'vue';
+    import { useComponentsStore } from '@/stores/useComponentsStore';
     import { Component, ComponentCategory } from '@/interfaces/builds';
 
     interface Props {
@@ -108,6 +109,8 @@
         duplicate: [component: Component];
         delete: [component: Component];
     }>();
+
+    const componentsStore = useComponentsStore();
 
     const categoryIcon = computed(() => {
         const icons: Record<ComponentCategory, string> = {
@@ -238,29 +241,35 @@
     }
 
     .action-btn {
+        width: 40px;
+        height: 40px;
+        background: rgba(var(--color-primary-rgb), 0.1);
+        border: none;
+        border-radius: var(--radius-full);
+        color: var(--color-text-muted);
+        cursor: pointer;
         display: flex;
         align-items: center;
         justify-content: center;
-        width: 36px;
-        height: 36px;
-        background: rgba(var(--color-primary-rgb), 0.1);
-        border: none;
-        border-radius: var(--radius-md);
-        color: var(--color-text-muted);
-        cursor: pointer;
         transition: var(--transition-fast);
-        font-size: var(--font-size-md);
+        font-size: var(--font-size-sm);
     }
 
     .action-btn:hover {
-        background: rgba(var(--color-primary-rgb), 0.2);
-        color: var(--color-primary);
+        background: var(--color-primary);
+        color: var(--color-white);
+        transform: translateY(-1px);
+    }
+
+    .action-btn.danger {
+        background: rgba(var(--color-error-rgb), 0.1);
+        color: var(--color-error);
         transform: translateY(-1px);
     }
 
     .action-btn.danger:hover {
-        background: rgba(var(--color-error-rgb), 0.2);
-        color: var(--color-error);
+        background: var(--color-error);
+        color: var(--color-white);
     }
 
     /* Premium Content */

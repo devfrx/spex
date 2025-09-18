@@ -97,6 +97,19 @@
                                     <Icon icon="mdi:plus" />
                                     <span>New Component</span>
                                 </button>
+                                <button @click="onChooseComponentFile()" class="collection-btn import-single-btn">
+                                    <Icon icon="mdi:import" />
+                                    <span>Import Single Component</span>
+                                </button>
+                                <button v-if="filteredComponents.length > 0" @click="exportComponentsCollection()"
+                                    class="collection-btn export-btn">
+                                    <Icon icon="mdi:export" />
+                                    <span>Export Collection</span>
+                                </button>
+                                <button @click="onChooseCollectionFile()" class="collection-btn">
+                                    <Icon icon="mdi:import" />
+                                    <span>Import Collection</span>
+                                </button>
                             </div>
                             <div class="actions-end">
                                 <button @click="handleClearAllComponents" class="collection-btn remove-btn">
@@ -123,7 +136,7 @@
                         </div>
 
                         <!-- No Results State -->
-                        <div v-else-if="filteredComponents.length === 0" class="empty-state">
+                        <div v-else-if="components.length === 0" class="empty-state">
                             <div class="empty-visual">
                                 <Icon icon="mdi:magnify" />
                             </div>
@@ -313,7 +326,9 @@
     import ComponentCard from '@/components/ComponentCard.vue';
     import BaseModal from '@/components/BaseModal.vue';
     import { useAlert } from '@/composables/alertManager';
-
+    import { exportComponentsCollection } from '@/composables/collectionJsonExport';
+    import { importComponentsCollection, pickAndImportCollection } from '@/composables/collectionJsonImport';
+    import { pickAndImportComponent } from '@/composables/compJsonImport';
     const { success, warning, error, confirm } = useAlert();
     const router = useRouter();
     const componentsStore = useComponentsStore();
@@ -389,6 +404,34 @@
             newComponent.value.model.trim() !== '' &&
             newComponent.value.price > 0;
     });
+
+    async function onChooseCollectionFile() {
+        try {
+            const ok = await pickAndImportCollection();
+            if (ok) {
+                await success('Collection imported successfully!', 'Import Complete');
+            } else {
+                await warning('Import cancelled or no valid collection found.', 'Import Cancelled');
+            }
+        } catch (err) {
+            console.error('Import error:', err);
+            await error('An error occurred during import. Please check the file format and try again.');
+        }
+    }
+
+    async function onChooseComponentFile() {
+        try {
+            const ok = await pickAndImportComponent();
+            if (ok) {
+                await success('Collection imported successfully!', 'Import Complete');
+            } else {
+                await warning('Import cancelled or no valid collection found.', 'Import Cancelled');
+            }
+        } catch (err) {
+            console.error('Import error:', err);
+            await error('An error occurred during import. Please check the file format and try again.');
+        }
+    }
 
     // Methods
     const goBack = () => {
@@ -1018,6 +1061,26 @@
 
     .collection-btn:hover {
         box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
+    .collection-btn.import-single-btn {
+        background: var(--color-info);
+    }
+
+    .collection-btn.import-single-btn:hover {
+        background: var(--color-info-dark);
+        box-shadow: 0 6px 20px rgba(var(--color-info-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
+    .collection-btn.export-btn {
+        background: var(--color-warning);
+    }
+
+    .collection-btn.export-btn:hover {
+        background: var(--color-warning-dark);
+        box-shadow: 0 6px 20px rgba(var(--color-warning-rgb), 0.4);
         transform: translateY(-2px);
     }
 

@@ -1,13 +1,15 @@
-import { useBuildsStore } from "@/stores/useBuildsStore";
+import { useComponentsStore } from "@/stores/useComponentsStore";
 
-const buildsStore = useBuildsStore();
+const componentsStore = useComponentsStore();
 
-export const importBuild = async (file: File) => {
+export const importComponentsCollection = async (file: File) => {
   if (!file) return;
 
   const json = await file.text();
-  const buildData = JSON.parse(json);
-  buildsStore.addBuild(buildData);
+  const collectionData = JSON.parse(json);
+  for (const componentData of collectionData) {
+    componentsStore.addComponent(componentData);
+  }
 };
 
 /**
@@ -43,7 +45,7 @@ async function pickFile(): Promise<File | null> {
  * Mostra il dialog per scegliere un file JSON e lo importa.
  * Ritorna true se l'import è andato a buon fine, false se annullato.
  */
-export async function pickAndImportBuild(): Promise<boolean> {
+export async function pickAndImportCollection(): Promise<boolean> {
   const file = await pickFile();
   if (!file) return false;
 
@@ -54,6 +56,6 @@ export async function pickAndImportBuild(): Promise<boolean> {
     throw new Error("File non valido: selezionare un file JSON.");
   }
 
-  await importBuild(file);
+  await importComponentsCollection(file);
   return true;
 }

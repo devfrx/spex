@@ -9,12 +9,15 @@
                 <span>{{ categoryName }}</span>
             </div>
             <div class="card-actions" v-if="showActions">
+                <button @click.stop="exportComponent(component.id)" class="action-btn export" title="Export">
+                    <Icon icon="mdi:export" />
+                </button>
                 <button v-if="canDuplicate" @click.stop="$emit('duplicate', component)" class="action-btn"
-                    title="Duplica">
+                    title="Duplicate">
                     <Icon icon="mdi:content-copy" />
                 </button>
                 <button v-if="canDelete" @click.stop="$emit('delete', component)" class="action-btn danger"
-                    title="Elimina">
+                    title="Remove">
                     <Icon icon="mdi:delete" />
                 </button>
             </div>
@@ -61,6 +64,7 @@
                 </div>
 
                 <div class="component-actions">
+                    <div class="price-label">Store</div>
                     <a v-if="component.amazonUrl" :href="component.amazonUrl" target="_blank" @click.stop
                         class="action-link amazon" title="View on Amazon">
                         <Icon icon="mdi:shopping" />
@@ -84,6 +88,7 @@
     import { computed } from 'vue';
     import { useComponentsStore } from '@/stores/useComponentsStore';
     import { Component, ComponentCategory } from '@/interfaces/builds';
+    import { exportComponent } from '@/composables/compJsonExport';
 
     interface Props {
         component: Component;
@@ -174,9 +179,13 @@
 <style scoped>
     .component-card {
         position: relative;
+        display: flex;
+        flex-direction: column;
+        width: 100%;
+        justify-content: space-between;
         background: rgba(var(--color-surface-dark-rgb), 0.6);
         border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-2xl);
+        border-radius: var(--radius-xl);
         overflow: hidden;
         transition: var(--transition-medium);
         backdrop-filter: blur(var(--blur-sm));
@@ -261,10 +270,19 @@
         transform: translateY(-1px);
     }
 
+    .action-btn.export {
+        background: rgba(var(--color-warning-rgb), 0.1);
+        color: var(--color-warning);
+    }
+
+    .action-btn.export:hover {
+        background: var(--color-warning);
+        color: var(--color-white);
+    }
+
     .action-btn.danger {
         background: rgba(var(--color-error-rgb), 0.1);
         color: var(--color-error);
-        transform: translateY(-1px);
     }
 
     .action-btn.danger:hover {
@@ -381,14 +399,18 @@
     /* Pricing & Actions */
     .component-footer {
         display: flex;
+        gap: var(--space-6);
         justify-content: space-between;
         align-items: center;
     }
 
-    .price-section {
+    .price-section,
+    .component-actions {
         display: flex;
         flex-direction: column;
-        gap: var(--space-1);
+        align-items: center;
+        justify-content: center;
+        gap: var(--space-2);
     }
 
     .price-label {
@@ -408,11 +430,6 @@
         font-weight: var(--font-weight-bold);
         box-shadow: 0 4px 12px rgba(var(--color-success-rgb), 0.3);
         line-height: 1;
-    }
-
-    .component-actions {
-        display: flex;
-        gap: var(--space-2);
     }
 
     .action-link {

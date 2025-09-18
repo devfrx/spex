@@ -983,7 +983,7 @@
         width: 80px;
         height: 80px;
         background: rgba(var(--color-primary-rgb), 0.15);
-        border-radius: var(--radius-xl);
+        border-radius: var(--radius-lg);
         display: flex;
         align-items: center;
         justify-content: center;

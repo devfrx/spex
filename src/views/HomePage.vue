@@ -401,7 +401,7 @@
     position: relative;
     padding: var(--space-4);
     background: rgba(var(--color-primary-rgb), 0.1);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
   }
 
@@ -415,7 +415,7 @@
     position: absolute;
     inset: -2px;
     background: linear-gradient(45deg, var(--color-primary), var(--color-accent));
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     opacity: 0;
     z-index: var(--z-hide);
   }
@@ -430,7 +430,7 @@
 
     50% {
       opacity: var(--opacity-30);
-      transform: scale(1.05);
+      transform: scale(1.1);
     }
   }
 

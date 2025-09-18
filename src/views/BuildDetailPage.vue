@@ -271,12 +271,14 @@
                                 </label>
                                 <div class="input-group premium">
                                     <input v-model="amazonUrl" placeholder="https://amzn.eu/d/..."
-                                        class="field-input" />
-                                    <button v-if="amazonUrl" @click="fetchProductInfo"
+                                        @blur="fetchProductInfo" class="field-input" />
+                                    <!-- <button v-if="amazonUrl" @click="fetchProductInfo"
                                         :disabled="componentsStore.loading" class="input-action">
                                         <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:download'"
                                             :class="{ 'loading-spin': componentsStore.loading }" />
-                                    </button>
+                                    </button> -->
+                                    <Icon v-if="componentsStore.loading" icon="mdi:loading"
+                                        class="input-action loading-spin" />
                                 </div>
                             </div>
 

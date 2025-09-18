@@ -25,7 +25,7 @@
                                 </div>
                                 <div class="component-meta">
                                     <h1 class="component-name">{{ component ? 'Edit Component' : 'Loading Component...'
-                                    }}</h1>
+                                        }}</h1>
                                     <p class="component-description">
                                         {{ component ? `${getCategoryName(component.category)} - ${component.model}` :
                                             'Modify component specifications and details' }}
@@ -458,9 +458,9 @@
         if (!amazonProductInfo.value) return;
 
         editForm.value.model = shortenProductTitle(
-        amazonProductInfo.value.title,
-        editForm.value.category
-      );
+            amazonProductInfo.value.title,
+            editForm.value.category
+        );
         editForm.value.price = amazonProductInfo.value.price;
 
         if (amazonProductInfo.value.specifications?.length) {
@@ -1248,11 +1248,6 @@
 
         .input-group.premium {
             flex-direction: column;
-        }
-
-        .input-action {
-            width: 100%;
-            height: 40px;
         }
 
         .header-actions {

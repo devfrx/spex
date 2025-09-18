@@ -334,7 +334,9 @@
     import { ComponentCategory, AmazonProductInfo, Component } from '@/interfaces/builds';
     import BaseModal from '@/components/BaseModal.vue';
     import { exportBuild } from '@/composables/buildJsonExport';
+    import { useAlert } from '@/composables/alertManager';
 
+    const { success, warning, error, confirm } = useAlert();
     const route = useRoute();
     const router = useRouter();
     const buildsStore = useBuildsStore();
@@ -477,7 +479,9 @@
     const removeSpecificComponent = async (category: ComponentCategory, component: Component) => {
         if (!build.value) return;
 
-        if (confirm(`Vuoi rimuovere ${component.model} dalla build?`)) {
+        const confirmed = await confirm(`Remove ${component.model} from the build?`);
+
+        if (confirmed) {
             try {
                 await buildsStore.removeSpecificComponentFromBuild(build.value.id, category, component.id);
             } catch (error) {

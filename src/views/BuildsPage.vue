@@ -271,7 +271,9 @@
     import BaseModal from '@/components/BaseModal.vue';
     import { exportBuild } from '@/composables/buildJsonExport';
     import { pickAndImportBuild } from '@/composables/buildJsonImport';
+    import { useAlert } from '@/composables/alertManager';
 
+    const { success, warning, error, confirm } = useAlert();
     const router = useRouter();
     const buildsStore = useBuildsStore();
 
@@ -279,6 +281,7 @@
     const showCreateModal = ref(false);
     const newBuildName = ref('');
     const newBuildDescription = ref('');
+
 
     // Build templates
     const buildTemplates = [
@@ -338,15 +341,7 @@
     };
 
     const editBuild = async (build: PCBuild) => {
-        // Implementa logica di edit inline o naviga alla pagina di edit
-        const newName = prompt('Nome build:', build.name);
-        if (newName && newName.trim() !== build.name) {
-            try {
-                await buildsStore.updateBuild(build.id, { name: newName.trim() });
-            } catch (error) {
-                console.error('Errore nell\'aggiornamento:', error);
-            }
-        }
+        router.push(`/builds/${build.id}/edit`);
     };
 
     const duplicateBuild = async (build: PCBuild) => {
@@ -361,7 +356,8 @@
     };
 
     const deleteBuild = async (build: PCBuild) => {
-        if (confirm(`Sei sicuro di voler eliminare "${build.name}"?`)) {
+        const confirmDelete = await confirm(`Sei sicuro di voler eliminare la build "${build.name}"? Questa azione non può essere annullata.`);
+        if (confirmDelete) {
             try {
                 await buildsStore.deleteBuild(build.id);
             } catch (error) {
@@ -419,13 +415,13 @@
         try {
             const ok = await pickAndImportBuild();
             if (ok) {
-                alert('Build imported successfully!');
+                await success('Build imported successfully!', 'Import Complete');
             } else {
-                alert('Import cancelled or failed.');
+                await warning('Import cancelled or no valid build found.', 'Import Cancelled');
             }
         } catch (err) {
             console.error('Import error:', err);
-            alert('An error occurred during import.');
+            await error('An error occurred during import. Please check the file format and try again.');
         }
     }
 

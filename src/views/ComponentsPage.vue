@@ -300,7 +300,9 @@
     import { ComponentCategory, Component, AmazonProductInfo } from '@/interfaces/builds';
     import ComponentCard from '@/components/ComponentCard.vue';
     import BaseModal from '@/components/BaseModal.vue';
+    import { useAlert } from '@/composables/alertManager';
 
+    const { success, warning, error, confirm } = useAlert();
     const router = useRouter();
     const componentsStore = useComponentsStore();
 
@@ -505,7 +507,9 @@
     };
 
     const deleteComponent = async (component: Component) => {
-        if (confirm(`Sei sicuro di voler eliminare "${component.model}"?`)) {
+        const confirmed = await confirm(`Are you sure you want to delete "${component.model}"?`)
+
+        if (confirmed) {
             try {
                 await componentsStore.deleteComponent(component.id);
             } catch (error) {

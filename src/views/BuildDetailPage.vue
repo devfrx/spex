@@ -134,60 +134,58 @@
                                 </header>
 
                                 <div class="panel-content">
-                                    <!-- Component List -->
-                                    <div v-if="getComponentsByCategory(category).length > 0" class="component-list">
+                                    <!-- Component Grid -->
+                                    <div v-if="getComponentsByCategory(category).length > 0" class="component-grid">
                                         <div v-for="component in getComponentsByCategory(category)" :key="component.id"
-                                            class="component-entry">
-                                            <div class="component-info">
-                                                <div class="component-thumbnail">
-                                                    <img v-if="component.imageUrl" :src="component.imageUrl"
-                                                        :alt="component.model" />
-                                                    <div v-else class="thumbnail-placeholder">
-                                                        <Icon icon="mdi:package-variant" />
-                                                    </div>
+                                            class="component-card">
+                                            <div class="card-image">
+                                                <img v-if="component.imageUrl" :src="component.imageUrl"
+                                                    :alt="component.model" />
+                                                <div v-else class="image-placeholder">
+                                                    <Icon icon="mdi:package-variant" />
+                                                </div>
+                                            </div>
+
+                                            <div class="card-content">
+                                                <div class="card-header">
+                                                    <h4 class="component-title">{{ component.model }}</h4>
+                                                    <div class="price-badge">€{{ component.price.toFixed(0) }}</div>
                                                 </div>
 
-                                                <div class="component-details">
-                                                    <div class="component-primary">
-                                                        <h4 class="component-title">{{ component.model }}</h4>
-                                                        <div class="price-tag">€{{ component.price.toFixed(2) }}</div>
-                                                    </div>
-
-                                                    <div v-if="component.specifications?.length"
-                                                        class="component-specs">
-                                                        <div class="specs-container">
-                                                            <span v-for="spec in component.specifications.slice(0, 2)"
-                                                                :key="spec" class="spec-chip">
-                                                                {{ spec }}
-                                                            </span>
-                                                            <span v-if="component.specifications.length > 2"
-                                                                class="spec-overflow">
-                                                                +{{ component.specifications.length - 2 }}
-                                                            </span>
-                                                        </div>
+                                                <div v-if="component.specifications?.length" class="specs-section">
+                                                    <div class="specs-list">
+                                                        <span v-for="spec in component.specifications.slice(0, 2)"
+                                                            :key="spec" class="spec-tag">
+                                                            {{ spec }}
+                                                        </span>
+                                                        <span v-if="component.specifications.length > 2"
+                                                            class="spec-more">
+                                                            +{{ component.specifications.length - 2 }}
+                                                        </span>
                                                     </div>
                                                 </div>
                                             </div>
-                                            <div class="component-toolbar">
 
+                                            <div class="card-actions">
                                                 <button v-if="componentNotExists(component)"
                                                     @click="componentsStore.addComponent(component)"
-                                                    class="tool-btn import-btn">
+                                                    class="action-btn import-btn" title="Import to library">
                                                     <Icon icon="mdi:import" />
                                                 </button>
 
                                                 <a v-if="component.amazonUrl" :href="component.amazonUrl"
-                                                    target="_blank" class="tool-btn external" title="View on Amazon">
+                                                    target="_blank" class="action-btn external-btn"
+                                                    title="View on Amazon">
                                                     <Icon icon="mdi:shopping" />
                                                 </a>
 
-                                                <button @click="editComponent(component)" class="tool-btn edit"
+                                                <button @click="editComponent(component)" class="action-btn edit-btn"
                                                     title="Edit component">
                                                     <Icon icon="mdi:pencil" />
                                                 </button>
 
                                                 <button @click="removeSpecificComponent(category, component)"
-                                                    class="tool-btn remove" title="Remove from build">
+                                                    class="action-btn remove-btn" title="Remove from build">
                                                     <Icon icon="mdi:close" />
                                                 </button>
                                             </div>
@@ -779,18 +777,18 @@
 
     .metrics-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-        gap: var(--space-8);
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: var(--space-6);
     }
 
     .metric-card {
         background: rgba(var(--color-surface-dark-rgb), 0.6);
         border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
         border-radius: var(--radius-2xl);
-        padding: var(--space-8);
+        padding: var(--space-6);
         display: flex;
         align-items: center;
-        gap: var(--space-6);
+        gap: var(--space-4);
         transition: var(--transition-medium);
         backdrop-filter: blur(var(--blur-sm));
         position: relative;
@@ -830,14 +828,14 @@
     }
 
     .metric-icon-wrapper {
-        width: 60px;
-        height: 60px;
+        width: 48px;
+        height: 48px;
         background: rgba(var(--color-primary-rgb), 0.2);
         border-radius: var(--radius-lg);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: var(--font-size-3xl);
+        font-size: var(--font-size-2xl);
         color: var(--color-primary);
     }
 
@@ -848,13 +846,13 @@
 
     .metric-badge {
         position: absolute;
-        top: -8px;
-        right: -8px;
+        top: -6px;
+        right: -6px;
         background: var(--color-primary);
         color: var(--color-white);
-        padding: var(--space-1) var(--space-3);
-        border-radius: var(--radius-lg);
-        font-size: var(--font-size-sm);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-xs);
         font-weight: var(--font-weight-semibold);
         box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.4);
     }
@@ -869,10 +867,10 @@
     }
 
     .metric-info h3 {
-        font-size: var(--font-size-xl);
+        font-size: var(--font-size-lg);
         font-weight: var(--font-weight-semibold);
         color: var(--color-text-dark);
-        margin: 0 0 var(--space-2) 0;
+        margin: 0 0 var(--space-1) 0;
     }
 
     .metric-info p {
@@ -884,8 +882,8 @@
     /* Completion Ring */
     .completion-ring {
         position: relative;
-        width: 60px;
-        height: 60px;
+        width: 48px;
+        height: 48px;
     }
 
     .progress-circle {
@@ -913,15 +911,15 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-xs);
         font-weight: var(--font-weight-bold);
         color: var(--color-primary);
     }
 
     .progress-status {
         margin-top: var(--space-2);
-        padding: var(--space-1) var(--space-3);
-        border-radius: var(--radius-md);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-sm);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-semibold);
         text-transform: uppercase;
@@ -955,14 +953,14 @@
 
     .catalog-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(720px, 2fr));
-        gap: var(--space-8);
+        grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+        gap: var(--space-6);
     }
 
     .category-panel {
         background: rgba(var(--color-surface-dark-rgb), 0.4);
         border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.15);
-        border-radius: var(--radius-2xl);
+        border-radius: var(--radius-xl);
         overflow: hidden;
         backdrop-filter: blur(var(--blur-sm));
         transition: var(--transition-medium);
@@ -977,7 +975,7 @@
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: var(--space-6) var(--space-8);
+        padding: var(--space-4) var(--space-6);
         background: rgba(var(--color-surface-dark-rgb), 0.6);
         border-bottom: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
     }
@@ -985,36 +983,38 @@
     .category-identity {
         display: flex;
         align-items: center;
-        gap: var(--space-4);
+        gap: var(--space-3);
     }
 
     .category-icon-wrapper {
-        width: 48px;
-        height: 48px;
+        width: 40px;
+        height: 40px;
         background: rgba(var(--color-primary-rgb), 0.2);
         border-radius: var(--radius-lg);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: var(--font-size-2xl);
+        font-size: var(--font-size-xl);
         color: var(--color-primary);
     }
 
     .category-meta h3 {
-        font-size: var(--font-size-lg);
+        font-size: var(--font-size-md);
         font-weight: var(--font-weight-semibold);
         color: var(--color-text-dark);
         margin: 0 0 var(--space-1) 0;
     }
 
     .component-counter {
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-xs);
         color: var(--color-text-muted);
+        text-transform: uppercase;
+        letter-spacing: var(--letter-spacing-wide);
     }
 
     .add-component-btn {
-        width: 40px;
-        height: 40px;
+        width: 36px;
+        height: 36px;
         background: var(--gradient-primary);
         border: none;
         border-radius: var(--radius-lg);
@@ -1024,7 +1024,7 @@
         align-items: center;
         justify-content: center;
         transition: var(--transition-medium);
-        font-size: var(--font-size-xl);
+        font-size: var(--font-size-lg);
         box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
     }
 
@@ -1034,146 +1034,144 @@
     }
 
     .panel-content {
-        padding: var(--space-8);
-    }
-
-    /* Component List */
-    .component-list {
-        display: flex;
-        align-items: stretch;
-        flex-direction: column;
-        gap: var(--space-6);
-    }
-
-    .component-entry {
-        display: flex;
-        flex-direction: column;
-        align-items: flex-start;
-        gap: var(--space-6);
         padding: var(--space-6);
+    }
+
+    /* Component Grid */
+    .component-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: var(--space-4);
+    }
+
+    .component-card {
         background: rgba(var(--color-bg-dark-rgb), 0.4);
         border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
         border-radius: var(--radius-lg);
+        overflow: hidden;
         transition: var(--transition-medium);
+        position: relative;
     }
 
-    .component-entry:hover {
+    .component-card:hover {
         background: rgba(var(--color-bg-dark-rgb), 0.6);
         border-color: rgba(var(--color-primary-rgb), 0.3);
         transform: translateY(-2px);
-        box-shadow: var(--shadow-lg);
+        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.15);
     }
 
-    .component-info {
-        display: flex;
-        align-items: center;
-        gap: var(--space-6);
+    .card-image {
         width: 100%;
-    }
-
-    .component-thumbnail {
-        width: 80px;
-        height: 80px;
+        height: 120px;
         background: rgba(var(--color-surface-dark-rgb), 0.6);
-        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.2);
-        border-radius: var(--radius-lg);
+        border-bottom: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
         display: flex;
         align-items: center;
         justify-content: center;
         overflow: hidden;
-        flex-shrink: 0;
+        position: relative;
     }
 
-    .component-thumbnail img {
+    .card-image img {
         width: 100%;
         height: 100%;
         object-fit: cover;
+        transition: var(--transition-medium);
     }
 
-    .thumbnail-placeholder {
-        font-size: var(--font-size-4xl);
+    .component-card:hover .card-image img {
+        transform: scale(1.05);
+    }
+
+    .image-placeholder {
+        font-size: var(--font-size-3xl);
         color: var(--color-secondary-500);
+        opacity: var(--opacity-60);
     }
 
-    .component-details {
-        flex: 1;
-        min-width: 0;
+    .card-content {
+        padding: var(--space-4);
     }
 
-    .component-primary {
+    .card-header {
         display: flex;
         align-items: flex-start;
         justify-content: space-between;
-        gap: var(--space-4);
-        margin-bottom: var(--space-4);
+        gap: var(--space-3);
+        margin-bottom: var(--space-3);
     }
 
     .component-title {
-        font-size: var(--font-size-lg);
+        font-size: var(--font-size-sm);
         font-weight: var(--font-weight-semibold);
         color: var(--color-text-dark);
         margin: 0;
-        line-height: var(--line-height-snug);
+        line-height: var(--line-height-tight);
         flex: 1;
+        display: -webkit-box;
+        -webkit-line-clamp: 2;
+        -webkit-box-orient: vertical;
+        overflow: hidden;
     }
 
-    .price-tag {
+    .price-badge {
         background: linear-gradient(135deg, var(--color-success), var(--color-success-dark));
         color: var(--color-white);
-        padding: var(--space-2) var(--space-4);
-        border-radius: var(--radius-lg);
-        font-size: var(--font-size-sm);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-md);
+        font-size: var(--font-size-xs);
         font-weight: var(--font-weight-semibold);
         white-space: nowrap;
-        box-shadow: 0 4px 12px rgba(var(--color-success-rgb), 0.3);
+        box-shadow: 0 2px 8px rgba(var(--color-success-rgb), 0.3);
+        flex-shrink: 0;
     }
 
-    .component-specs {
-        margin-top: var(--space-3);
+    .specs-section {
+        margin-top: var(--space-2);
     }
 
-    .specs-container {
+    .specs-list {
         display: flex;
         flex-wrap: wrap;
-        gap: var(--space-2);
+        gap: var(--space-1);
     }
 
-    .spec-chip {
+    .spec-tag {
         background: rgba(var(--color-primary-rgb), 0.2);
         color: var(--color-primary-light);
-        padding: var(--space-1) var(--space-3);
-        border-radius: var(--radius-md);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-sm);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
         border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.3);
     }
 
-    .spec-overflow {
+    .spec-more {
         background: rgba(var(--color-text-muted-rgb), 0.2);
         color: var(--color-text-muted);
-        padding: var(--space-1) var(--space-3);
-        border-radius: var(--radius-md);
+        padding: var(--space-1) var(--space-2);
+        border-radius: var(--radius-sm);
         font-size: var(--font-size-xs);
         font-weight: var(--font-weight-medium);
         border: var(--border-thin) solid rgba(var(--color-text-muted-rgb), 0.3);
     }
 
-    .component-toolbar {
+    .card-actions {
         display: flex;
-        align-items: flex-end;
+        align-items: center;
         justify-content: flex-end;
-        flex-direction: row;
-        flex-wrap: wrap;
         gap: var(--space-2);
-        align-self: flex-end;
+        padding: var(--space-3) var(--space-4);
+        background: rgba(var(--color-surface-dark-rgb), 0.3);
+        border-top: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
     }
 
-    .tool-btn {
-        width: 40px;
-        height: 40px;
+    .action-btn {
+        width: 32px;
+        height: 32px;
         background: rgba(var(--color-primary-rgb), 0.1);
         border: none;
-        border-radius: var(--radius-full);
+        border-radius: var(--radius-md);
         color: var(--color-text-muted);
         cursor: pointer;
         display: flex;
@@ -1181,44 +1179,50 @@
         justify-content: center;
         transition: var(--transition-fast);
         font-size: var(--font-size-sm);
+        text-decoration: none;
     }
 
-    .tool-btn:hover {
+    .action-btn:hover {
         transform: translateY(-1px);
-        box-shadow: var(--shadow-md);
+        box-shadow: var(--shadow-sm);
     }
 
-    .tool-btn.import-btn {
+    .action-btn.import-btn {
         background: rgba(var(--color-warning-rgb), 0.1);
         color: var(--color-warning);
     }
 
-    .tool-btn.import-btn:hover {
+    .action-btn.import-btn:hover {
         background: var(--color-warning);
         color: var(--color-white);
     }
 
-    .tool-btn.external:hover {
-        background: var(--color-warning);
+    .action-btn.external-btn {
+        background: rgba(var(--color-accent-rgb), 0.1);
+        color: var(--color-accent);
+    }
+
+    .action-btn.external-btn:hover {
+        background: var(--color-accent);
         color: var(--color-white);
     }
 
-    .tool-btn.edit {
+    .action-btn.edit-btn {
         background: rgba(var(--color-info-rgb), 0.1);
         color: var(--color-info);
     }
 
-    .tool-btn.edit:hover {
+    .action-btn.edit-btn:hover {
         background: var(--color-info);
         color: var(--color-white);
     }
 
-    .tool-btn.remove {
+    .action-btn.remove-btn {
         background: rgba(var(--color-error-rgb), 0.1);
         color: var(--color-error);
     }
 
-    .tool-btn.remove:hover {
+    .action-btn.remove-btn:hover {
         background: var(--color-error);
         color: var(--color-white);
     }
@@ -1229,32 +1233,33 @@
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        padding: var(--space-12) var(--space-8);
+        padding: var(--space-8) var(--space-4);
         text-align: center;
+        min-height: 200px;
     }
 
     .empty-visual {
-        width: 80px;
-        height: 80px;
+        width: 64px;
+        height: 64px;
         background: rgba(var(--color-primary-rgb), 0.1);
         border-radius: var(--radius-lg);
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: var(--font-size-5xl);
+        font-size: var(--font-size-4xl);
         color: var(--color-secondary-500);
-        margin-bottom: var(--space-6);
+        margin-bottom: var(--space-4);
     }
 
     .empty-content {
         display: flex;
         flex-direction: column;
         align-items: center;
-        max-width: 400px;
+        max-width: 300px;
     }
 
     .empty-content h4 {
-        font-size: var(--font-size-xl);
+        font-size: var(--font-size-lg);
         font-weight: var(--font-weight-semibold);
         color: var(--color-text-dark);
         margin: 0 0 var(--space-2) 0;
@@ -1263,7 +1268,7 @@
     .empty-content p {
         font-size: var(--font-size-sm);
         color: var(--color-text-muted);
-        margin: 0 0 var(--space-8) 0;
+        margin: 0 0 var(--space-6) 0;
         line-height: var(--line-height-relaxed);
     }
 
@@ -1271,7 +1276,7 @@
         display: flex;
         align-items: center;
         gap: var(--space-2);
-        padding: var(--space-3) var(--space-6);
+        padding: var(--space-2) var(--space-4);
         background: var(--gradient-primary);
         border: none;
         border-radius: var(--radius-lg);
@@ -1280,6 +1285,7 @@
         cursor: pointer;
         transition: var(--transition-medium);
         box-shadow: var(--shadow-primary);
+        font-size: var(--font-size-sm);
     }
 
     .empty-action:hover {
@@ -1300,8 +1306,6 @@
 
     .form-field {
         display: flex;
-        /* align-items: center;
-        justify-content: center; */
         flex-direction: column;
         gap: var(--space-3);
     }
@@ -1435,29 +1439,6 @@
         background: transparent;
     }
 
-    .input-action {
-        width: 48px;
-        height: 48px;
-        background: var(--color-primary);
-        border: none;
-        color: var(--color-white);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: var(--transition-medium);
-        font-size: var(--font-size-lg);
-    }
-
-    .input-action:hover:not(:disabled) {
-        background: var(--color-primary-dark);
-    }
-
-    .input-action:disabled {
-        opacity: var(--opacity-60);
-        cursor: not-allowed;
-    }
-
     .loading-spin {
         font-size: var(--font-size-2xl);
         align-self: center;
@@ -1562,12 +1543,26 @@
     }
 
     /* Responsive Design */
+    @media (max-width: var(--breakpoint-xl)) {
+        .catalog-grid {
+            grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        }
+
+        .component-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+
     @media (max-width: var(--breakpoint-lg)) {
         .dashboard {
             padding: var(--space-8) var(--space-6);
         }
 
         .metrics-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .catalog-grid {
             grid-template-columns: 1fr;
         }
 
@@ -1581,20 +1576,8 @@
             width: 100%;
         }
 
-        .component-entry {
-            flex-direction: column;
-            gap: var(--space-4);
-        }
-
-        .component-primary {
-            flex-direction: column;
-            gap: var(--space-3);
-            align-items: flex-start;
-        }
-
-        .component-toolbar {
-            flex-direction: row;
-            align-self: flex-end;
+        .component-grid {
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
         }
     }
 
@@ -1620,20 +1603,26 @@
             font-size: var(--font-size-2xl);
         }
 
-        .action-primary span {
+        .action-primary span,
+        .action-secondary span {
             display: none;
         }
 
         .panel-header {
-            padding: var(--space-4) var(--space-6);
+            padding: var(--space-4) var(--space-5);
         }
 
         .panel-content {
-            padding: var(--space-6);
+            padding: var(--space-5);
         }
 
-        .empty-state {
-            padding: var(--space-8) var(--space-4);
+        .component-grid {
+            grid-template-columns: 1fr;
+            gap: var(--space-3);
+        }
+
+        .card-image {
+            height: 100px;
         }
 
         .toggle-group {
@@ -1643,33 +1632,41 @@
         .input-group.premium {
             flex-direction: column;
         }
-
-        .input-action {
-            width: 100%;
-            height: 40px;
-        }
     }
 
     @media (max-width: var(--breakpoint-sm)) {
+        .dashboard {
+            padding: var(--space-6) var(--space-4);
+        }
+
         .metrics-grid {
             gap: var(--space-4);
         }
 
         .metric-card {
-            padding: var(--space-6);
-        }
-
-        .component-list {
-            gap: var(--space-4);
-        }
-
-        .component-entry {
             padding: var(--space-4);
         }
 
-        .component-thumbnail {
-            width: 60px;
-            height: 60px;
+        .catalog-grid {
+            gap: var(--space-4);
+        }
+
+        .component-grid {
+            gap: var(--space-3);
+        }
+
+        .card-content {
+            padding: var(--space-3);
+        }
+
+        .card-actions {
+            padding: var(--space-2) var(--space-3);
+        }
+
+        .action-btn {
+            width: 28px;
+            height: 28px;
+            font-size: var(--font-size-xs);
         }
     }
 </style>

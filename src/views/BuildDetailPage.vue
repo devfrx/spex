@@ -270,15 +270,9 @@
                                     Amazon Product URL
                                 </label>
                                 <div class="input-group premium">
-                                    <input v-model="amazonUrl" placeholder="https://amzn.eu/d/..."
-                                        @blur="fetchProductInfo" class="field-input" />
-                                    <!-- <button v-if="amazonUrl" @click="fetchProductInfo"
-                                        :disabled="componentsStore.loading" class="input-action">
-                                        <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:download'"
-                                            :class="{ 'loading-spin': componentsStore.loading }" />
-                                    </button> -->
-                                    <Icon v-if="componentsStore.loading" icon="mdi:loading"
-                                        class="input-action loading-spin" />
+                                    <input v-model.trim="amazonUrl" placeholder="https://amzn.eu/d/..."
+                                        @input="onAmazonInput" class="field-input" aria-label="Amazon product URL" />
+                                    <Icon v-if="componentsStore.loading" icon="mdi:loading" class="loading-spin" />
                                 </div>
                             </div>
 
@@ -339,6 +333,10 @@
     const useExistingComponent = ref(false);
     const amazonUrl = ref('');
     const productInfo = ref<AmazonProductInfo | null>(null);
+    // debounce + request-sequencing to avoid race conditions
+    import { onBeforeUnmount } from 'vue';
+    let debounceTimer: number | null = null;
+    let fetchSeq = 0; // increasing sequence id for requests
 
     const buildId = computed(() => route.params.id as string);
     const build = computed(() => buildsStore.getBuildById(buildId.value));
@@ -471,6 +469,49 @@
             }
         }
     };
+
+    const onAmazonInput = () => {
+        // clear previous preview immediately
+        productInfo.value = null;
+
+        // reset debounce
+        if (debounceTimer) {
+            window.clearTimeout(debounceTimer);
+            debounceTimer = null;
+        }
+
+        const url = amazonUrl.value?.trim();
+        if (!url) return;
+
+        // debounce time (ms)
+        debounceTimer = window.setTimeout(async () => {
+            // increment sequence id for this request
+            const mySeq = ++fetchSeq;
+
+            // avoid firing while a store-level fetch is already running
+            if (componentsStore.loading) return;
+
+            try {
+                const info = await componentsStore.fetchAmazonProductInfo(url);
+
+                // ignore if a newer request started meanwhile
+                if (mySeq !== fetchSeq) return;
+
+                productInfo.value = info;
+            } catch (err) {
+                // ignore stale errors; only clear preview for current seq
+                if (mySeq !== fetchSeq) return;
+                console.error('Errore nel recupero info prodotto:', err);
+                productInfo.value = null;
+            } finally {
+                debounceTimer = null;
+            }
+        }, 600);
+    };
+
+    onBeforeUnmount(() => {
+        if (debounceTimer) window.clearTimeout(debounceTimer);
+    });
 
     onMounted(() => {
         if (build.value) {

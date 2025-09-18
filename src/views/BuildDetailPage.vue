@@ -272,9 +272,9 @@
                                 <div class="input-group premium">
                                     <input v-model.trim="amazonUrl" placeholder="https://amzn.eu/d/..."
                                         @input="onAmazonInput" class="field-input" aria-label="Amazon product URL" />
-                                    <Icon v-if="componentsStore.loading" icon="mdi:loading" class="loading-spin" />
                                 </div>
                             </div>
+                            <Icon v-if="componentsStore.loading" icon="mdi:loading" class="loading-spin" />
 
                             <!-- Product Preview -->
                             <div v-if="productInfo && !useExistingComponent" class="product-preview">
@@ -1222,6 +1222,8 @@
 
     .form-field {
         display: flex;
+        /* align-items: center;
+        justify-content: center; */
         flex-direction: column;
         gap: var(--space-3);
     }
@@ -1379,6 +1381,8 @@
     }
 
     .loading-spin {
+        font-size: var(--font-size-2xl);
+        align-self: center;
         animation: spin 1s linear infinite;
     }
 

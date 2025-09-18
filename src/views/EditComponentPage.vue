@@ -1178,7 +1178,7 @@
     }
 
     /* Responsive Design */
-    @media (max-width: var(--breakpoint-lg)) {
+    @media (max-width: 1024px) {
         .dashboard {
             padding: var(--space-8) var(--space-6);
         }
@@ -1204,7 +1204,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-md)) {
+    @media (max-width: 768px) {
 
         .header-content,
         .dashboard {
@@ -1241,7 +1241,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-sm)) {
+    @media (max-width: 640px) {
         .form-section {
             padding: var(--space-6);
         }

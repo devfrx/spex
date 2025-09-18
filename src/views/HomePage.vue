@@ -596,7 +596,7 @@
   }
 
   /* Responsive Design */
-  @media (max-width: var(--breakpoint-md)) {
+  @media (max-width: 768px) {
     .home-container {
       padding: var(--space-6) var(--space-4);
     }
@@ -629,7 +629,7 @@
     }
   }
 
-  @media (max-width: var(--breakpoint-sm)) {
+  @media (max-width: 640px) {
     .hero-title {
       font-size: var(--font-size-4xl);
     }

@@ -30,10 +30,7 @@
                             </div>
 
                             <div class="header-actions">
-                                <button @click="showCreateModal = true" class="action-primary">
-                                    <Icon icon="mdi:plus" />
-                                    <span>New Component</span>
-                                </button>
+
                             </div>
                         </div>
                     </div>
@@ -41,6 +38,109 @@
 
                 <!-- Main Dashboard -->
                 <main class="dashboard">
+
+                    <!-- Filters & Search -->
+                    <section class="filters-section">
+                        <div class="section-header">
+                            <h2>Filter & Search</h2>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="filters-container">
+                            <div class="search-field">
+                                <div class="search-box">
+                                    <Icon icon="mdi:magnify" class="search-icon" />
+                                    <input v-model="searchQuery" placeholder="Search components..."
+                                        class="search-input premium" />
+                                </div>
+                            </div>
+
+                            <div class="filter-controls">
+                                <div class="filter-field">
+                                    <label class="filter-label">
+                                        <Icon icon="mdi:tag" />
+                                        Category
+                                    </label>
+                                    <select v-model="selectedCategoryFilter" class="filter-select premium">
+                                        <option value="">All Categories</option>
+                                        <option v-for="category in allCategories" :key="category" :value="category">
+                                            {{ getCategoryName(category) }}
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="filter-field">
+                                    <label class="filter-label">
+                                        <Icon icon="mdi:sort" />
+                                        Sort By
+                                    </label>
+                                    <select v-model="sortBy" class="filter-select premium">
+                                        <option value="name">Name</option>
+                                        <option value="price">Price</option>
+                                        <option value="category">Category</option>
+                                        <option value="date">Date Added</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Components Collection -->
+                    <section class="collection-section">
+                        <!-- <div class="section-header">
+                            <h2>Components Collection</h2>
+                            <div class="section-divider"></div>
+                        </div> -->
+                        <div class="collection-actions">
+                            <div class="actions-start">
+                                <button @click="showCreateModal = true" class="collection-btn add-btn">
+                                    <Icon icon="mdi:plus" />
+                                    <span>New Component</span>
+                                </button>
+                            </div>
+                            <div class="actions-end">
+                                <button @click="handleClearAllComponents" class="collection-btn remove-btn">
+                                    <Icon icon="mdi:delete" />
+                                    <span class="catalog-btn-text">Clear all</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div v-if="filteredComponents.length === 0 && !searchQuery && !selectedCategoryFilter"
+                            class="empty-state">
+                            <div class="empty-visual">
+                                <Icon icon="mdi:package-variant" />
+                            </div>
+                            <div class="empty-content">
+                                <h3>No components yet</h3>
+                                <p>Start building your component library by adding your first PC part</p>
+                                <button @click="showCreateModal = true" class="empty-action">
+                                    <Icon icon="mdi:plus" />
+                                    Create First Component
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- No Results State -->
+                        <div v-else-if="filteredComponents.length === 0" class="empty-state">
+                            <div class="empty-visual">
+                                <Icon icon="mdi:magnify" />
+                            </div>
+                            <div class="empty-content">
+                                <h3>No results found</h3>
+                                <p>Try adjusting your search filters to find what you're looking for</p>
+                            </div>
+                        </div>
+
+                        <!-- Components Grid -->
+                        <div v-else class="components-grid">
+                            <ComponentCard v-for="component in filteredComponents" :key="component.id"
+                                :component="component" @click="editComponent" @duplicate="duplicateComponent"
+                                @delete="deleteComponent" />
+                        </div>
+                    </section>
+
                     <!-- Performance Metrics -->
                     <section class="metrics-section">
                         <div class="section-header">
@@ -91,94 +191,6 @@
                                     </div>
                                 </div>
                             </div> -->
-                        </div>
-                    </section>
-
-                    <!-- Filters & Search -->
-                    <section class="filters-section">
-                        <div class="section-header">
-                            <h2>Filter & Search</h2>
-                            <div class="section-divider"></div>
-                        </div>
-
-                        <div class="filters-container">
-                            <div class="search-field">
-                                <div class="search-box">
-                                    <Icon icon="mdi:magnify" class="search-icon" />
-                                    <input v-model="searchQuery" placeholder="Search components..."
-                                        class="search-input premium" />
-                                </div>
-                            </div>
-
-                            <div class="filter-controls">
-                                <div class="filter-field">
-                                    <label class="filter-label">
-                                        <Icon icon="mdi:tag" />
-                                        Category
-                                    </label>
-                                    <select v-model="selectedCategoryFilter" class="filter-select premium">
-                                        <option value="">All Categories</option>
-                                        <option v-for="category in allCategories" :key="category" :value="category">
-                                            {{ getCategoryName(category) }}
-                                        </option>
-                                    </select>
-                                </div>
-
-                                <div class="filter-field">
-                                    <label class="filter-label">
-                                        <Icon icon="mdi:sort" />
-                                        Sort By
-                                    </label>
-                                    <select v-model="sortBy" class="filter-select premium">
-                                        <option value="name">Name</option>
-                                        <option value="price">Price</option>
-                                        <option value="category">Category</option>
-                                        <option value="date">Date Added</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
-                    <!-- Components Collection -->
-                    <section class="collection-section">
-                        <div class="section-header">
-                            <h2>Components Collection</h2>
-                            <div class="section-divider"></div>
-                        </div>
-
-                        <!-- Empty State -->
-                        <div v-if="filteredComponents.length === 0 && !searchQuery && !selectedCategoryFilter"
-                            class="empty-state">
-                            <div class="empty-visual">
-                                <Icon icon="mdi:package-variant" />
-                            </div>
-                            <div class="empty-content">
-                                <h3>No components yet</h3>
-                                <p>Start building your component library by adding your first PC part</p>
-                                <button @click="showCreateModal = true" class="empty-action">
-                                    <Icon icon="mdi:plus" />
-                                    Create First Component
-                                </button>
-                            </div>
-                        </div>
-
-                        <!-- No Results State -->
-                        <div v-else-if="filteredComponents.length === 0" class="empty-state">
-                            <div class="empty-visual">
-                                <Icon icon="mdi:magnify" />
-                            </div>
-                            <div class="empty-content">
-                                <h3>No results found</h3>
-                                <p>Try adjusting your search filters to find what you're looking for</p>
-                            </div>
-                        </div>
-
-                        <!-- Components Grid -->
-                        <div v-else class="components-grid">
-                            <ComponentCard v-for="component in filteredComponents" :key="component.id"
-                                :component="component" @click="editComponent" @duplicate="duplicateComponent"
-                                @delete="deleteComponent" />
                         </div>
                     </section>
                 </main>
@@ -518,6 +530,19 @@
         }
     };
 
+    const handleClearAllComponents = async () => {
+        const confirmed = await confirm('Are you sure you want to clear all components? This action cannot be undone.');
+
+        if (confirmed) {
+            try {
+                componentsStore.clearAllComponents();
+                success('All components have been cleared.');
+            } catch (error) {
+                console.error('Errore nella cancellazione di tutti i componenti:', error);
+            }
+        }
+    };
+
     // Watchers
     watch(() => newComponent.value.amazonUrl, () => {
         productPreview.value = null;
@@ -744,17 +769,6 @@
         overflow: hidden;
     }
 
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: var(--gradient-primary);
-        opacity: var(--opacity-80);
-    }
-
     .metric-card:hover {
         transform: translateY(-4px);
         border-color: rgba(var(--color-primary-rgb), 0.4);
@@ -960,6 +974,73 @@
     .collection-section {
         margin-bottom: var(--space-16);
     }
+
+    .collection-actions {
+        display: flex;
+        gap: var(--space-4);
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-6);
+    }
+
+    .actions-start {
+        display: flex;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-start;
+        flex: 1;
+    }
+
+    .actions-end {
+        display: flex;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-end;
+        flex: 1;
+    }
+
+    .collection-btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-4) var(--space-6);
+        background: var(--color-primary);
+        border: none;
+        border-radius: var(--radius-md);
+        color: var(--color-white);
+        font-size: var(--font-size-md);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: var(--transition-fast);
+    }
+
+    .collection-btn:hover {
+        box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
+    .collection-btn.add-btn {
+        background: var(--color-success);
+    }
+
+    .collection-btn.add-btn:hover {
+        background: var(--color-success-dark);
+        box-shadow: 0 6px 20px rgba(var(--color-success-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
+    .collection-btn.remove-btn {
+        background: var(--color-error);
+    }
+
+    .collection-btn.remove-btn:hover {
+        background: var(--color-error-dark);
+        box-shadow: 0 6px 20px rgba(var(--color-error-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
 
     /* Empty State */
     .empty-state {
@@ -1286,7 +1367,7 @@
     }
 
     /* Responsive Design */
-    @media (max-width: var(--breakpoint-lg)) {
+    @media (max-width: 1024px) {
         .dashboard {
             padding: var(--space-8) var(--space-6);
         }
@@ -1314,7 +1395,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-md)) {
+    @media (max-width: 768px) {
 
         .header-content,
         .dashboard {
@@ -1353,7 +1434,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-sm)) {
+    @media (max-width: 640px) {
         .metrics-grid {
             gap: var(--space-4);
         }

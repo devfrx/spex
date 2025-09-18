@@ -497,7 +497,7 @@
     }
 
     /* Responsive Design */
-    @media (max-width: var(--breakpoint-md)) {
+    @media (max-width: 768px) {
         .build-metrics {
             flex-direction: column;
             gap: var(--space-3);
@@ -514,7 +514,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-sm)) {
+    @media (max-width: 640px) {
         .card-content {
             padding: var(--space-4);
         }

@@ -450,7 +450,7 @@
     }
 
     /* Responsive */
-    @media (max-width: var(--breakpoint-md)) {
+    @media (max-width: 768px) {
         .alert-overlay {
             padding: var(--space-4);
         }

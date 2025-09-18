@@ -128,6 +128,10 @@ export const useComponentsStore = defineStore("components", {
       this.components.splice(index, 1);
     },
 
+    clearAllComponents() {
+      this.components = [];
+    },
+
     addComponent(component: Component) {
       this.components.push(component);
     },

@@ -28,81 +28,36 @@
                                     <p class="page-description">Configura e gestisci i tuoi sistemi personalizzati</p>
                                 </div>
                             </div>
-
-                            <div class="header-actions">
-                                <button @click="onChooseFile()" class="action-secondary import-btn">
-                                    <Icon icon="mdi:import" />
-                                    <span>Import</span>
-                                </button>
-                                <button @click="createNewBuild" class="action-primary">
-                                    <Icon icon="mdi:plus" />
-                                    <span>New Build</span>
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </header>
 
                 <!-- Main Dashboard -->
                 <main class="dashboard">
-                    <!-- Performance Metrics -->
-                    <section class="metrics-section">
-                        <div class="section-header">
-                            <h2>Collection Overview</h2>
-                            <div class="section-divider"></div>
-                        </div>
-
-                        <div class="metrics-grid">
-                            <div class="metric-card builds">
-                                <div class="metric-visual">
-                                    <div class="metric-icon-wrapper">
-                                        <Icon icon="mdi:desktop-tower-monitor" />
-                                    </div>
-                                    <div class="metric-badge">{{ totalBuilds }}</div>
-                                </div>
-                                <div class="metric-info">
-                                    <h3>Total Builds</h3>
-                                    <p>Configured systems</p>
-                                </div>
-                            </div>
-
-                            <div class="metric-card budget">
-                                <div class="metric-visual">
-                                    <div class="metric-icon-wrapper budget-icon">
-                                        <Icon icon="mdi:currency-eur" />
-                                    </div>
-                                    <div class="metric-badge budget-badge">€{{ totalValue.toFixed(0) }}</div>
-                                </div>
-                                <div class="metric-info">
-                                    <h3>Total Value</h3>
-                                    <p>Combined worth</p>
-                                </div>
-                            </div>
-
-                            <div class="metric-card average">
-                                <div class="metric-visual">
-                                    <div class="metric-icon-wrapper average-icon">
-                                        <Icon icon="mdi:chart-line" />
-                                    </div>
-                                    <div class="metric-badge average-badge">€{{ avgValue.toFixed(0) }}</div>
-                                </div>
-                                <div class="metric-info">
-                                    <h3>Average Cost</h3>
-                                    <p>Per build</p>
-                                    <div class="trend-indicator positive">
-                                        <Icon icon="mdi:trending-up" />
-                                        <span>Professional grade</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
-
                     <!-- Builds Collection -->
                     <section class="collection-section">
                         <div class="section-header">
                             <h2>Your Builds</h2>
                             <div class="section-divider"></div>
+                        </div>
+
+                        <div class="collection-actions">
+                            <div class="actions-start">
+                                <button @click="onChooseFile()" class="collection-btn">
+                                    <Icon icon="mdi:import" />
+                                    <span>Import</span>
+                                </button>
+                                <button @click="createNewBuild" class="collection-btn add-btn">
+                                    <Icon icon="mdi:plus" />
+                                    <span>New Build</span>
+                                </button>
+                            </div>
+                            <div class="actions-end">
+                                <button @click="handleClearAllBuilds" class="collection-btn remove-btn">
+                                    <Icon icon="mdi:delete" />
+                                    <span class="catalog-btn-text">Clear all</span>
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Empty State -->
@@ -202,6 +157,59 @@
                                     <div class="creation-date">
                                         <Icon icon="mdi:calendar" class="date-icon" />
                                         <span>{{ formatDate(build.createdAt) }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Performance Metrics -->
+                    <section class="metrics-section">
+                        <div class="section-header">
+                            <h2>Collection Overview</h2>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-card builds">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper">
+                                        <Icon icon="mdi:desktop-tower-monitor" />
+                                    </div>
+                                    <div class="metric-badge">{{ totalBuilds }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Total Builds</h3>
+                                    <p>Configured systems</p>
+                                </div>
+                            </div>
+
+                            <div class="metric-card budget">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper budget-icon">
+                                        <Icon icon="mdi:currency-eur" />
+                                    </div>
+                                    <div class="metric-badge budget-badge">€{{ totalValue.toFixed(0) }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Total Value</h3>
+                                    <p>Combined worth</p>
+                                </div>
+                            </div>
+
+                            <div class="metric-card average">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper average-icon">
+                                        <Icon icon="mdi:chart-line" />
+                                    </div>
+                                    <div class="metric-badge average-badge">€{{ avgValue.toFixed(0) }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Average Cost</h3>
+                                    <p>Per build</p>
+                                    <div class="trend-indicator positive">
+                                        <Icon icon="mdi:trending-up" />
+                                        <span>Professional grade</span>
                                     </div>
                                 </div>
                             </div>
@@ -425,6 +433,23 @@
         }
     }
 
+    const handleClearAllBuilds = async () => {
+        if (builds.value.length === 0) {
+            await warning('No builds to clear.', 'Nothing to Clear');
+            return;
+        }
+
+        const confirmClear = await confirm('Are you sure you want to clear all builds? This action cannot be undone.');
+        if (confirmClear) {
+            try {
+                buildsStore.clearAllBuilds();
+                await success('All builds have been cleared.', 'Cleared');
+            } catch (error) {
+                console.error('Error clearing builds:', error);
+            }
+        }
+    };
+
     const formatDate = (date: Date) => {
         return new Intl.DateTimeFormat('it-IT', {
             day: 'numeric',
@@ -584,7 +609,7 @@
         padding: var(--space-3) var(--space-6);
         background: var(--gradient-primary);
         border: none;
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-md);
         color: var(--color-white);
         font-weight: var(--font-weight-semibold);
         cursor: pointer;
@@ -604,7 +629,7 @@
         padding: var(--space-3) var(--space-6);
         background: var(--color-warning);
         border: var(--border-thin) solid rgba(var(--color-warning-rgb), 0.2);
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-md);
         color: var(--color-text-dark);
         font-weight: var(--font-weight-semibold);
         cursor: pointer;
@@ -660,6 +685,72 @@
         border-radius: var(--radius-full);
     }
 
+    .collection-actions {
+        display: flex;
+        gap: var(--space-4);
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-6);
+    }
+
+    .actions-start {
+        display: flex;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-start;
+        flex: 1;
+    }
+
+    .actions-end {
+        display: flex;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-end;
+        flex: 1;
+    }
+
+    .collection-btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-4) var(--space-6);
+        background: var(--color-primary);
+        border: none;
+        border-radius: var(--radius-md);
+        color: var(--color-white);
+        font-size: var(--font-size-md);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: var(--transition-fast);
+    }
+
+    .collection-btn:hover {
+        box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
+    .collection-btn.add-btn {
+        background: var(--color-success);
+    }
+
+    .collection-btn.add-btn:hover {
+        background: var(--color-success-dark);
+        box-shadow: 0 6px 20px rgba(var(--color-success-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
+    .collection-btn.remove-btn {
+        background: var(--color-error);
+    }
+
+    .collection-btn.remove-btn:hover {
+        background: var(--color-error-dark);
+        box-shadow: 0 6px 20px rgba(var(--color-error-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
     /* Premium Metrics */
     .metrics-section {
         margin-bottom: var(--space-16);
@@ -683,17 +774,6 @@
         backdrop-filter: blur(var(--blur-sm));
         position: relative;
         overflow: hidden;
-    }
-
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: var(--gradient-primary);
-        opacity: var(--opacity-80);
     }
 
     .metric-card:hover {
@@ -1018,8 +1098,8 @@
     }
 
     .action-btn {
-        width: 32px;
-        height: 32px;
+        width: 40px;
+        height: 40px;
         background: rgba(var(--color-primary-rgb), 0.1);
         border: none;
         border-radius: var(--radius-md);
@@ -1029,7 +1109,7 @@
         align-items: center;
         justify-content: center;
         transition: var(--transition-fast);
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-lg);
     }
 
     .action-btn:hover {
@@ -1326,7 +1406,7 @@
     }
 
     /* Responsive Design */
-    @media (max-width: var(--breakpoint-lg)) {
+    @media (max-width: 1024px) {
         .dashboard {
             padding: var(--space-8) var(--space-6);
         }
@@ -1350,7 +1430,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-md)) {
+    @media (max-width: 768px) {
 
         .header-content,
         .dashboard {
@@ -1390,7 +1470,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-sm)) {
+    @media (max-width: 640px) {
         .metrics-grid {
             gap: var(--space-4);
         }

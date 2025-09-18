@@ -450,7 +450,7 @@
     }
 
     /* Responsive Design */
-    @media (max-width: var(--breakpoint-lg)) {
+    @media (max-width: 1024px) {
         .modal-overlay {
             padding: var(--space-4);
         }
@@ -468,7 +468,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-md)) {
+    @media (max-width: 768px) {
         .modal-overlay {
             padding: var(--space-2);
         }
@@ -516,7 +516,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-sm)) {
+    @media (max-width: 640px) {
         .modal-header {
             padding: var(--space-4);
         }

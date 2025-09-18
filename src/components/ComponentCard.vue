@@ -460,7 +460,7 @@
     }
 
     /* Responsive Design */
-    @media (max-width: var(--breakpoint-md)) {
+    @media (max-width: 768px) {
         .component-identity {
             flex-direction: column;
             align-items: center;
@@ -485,7 +485,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-sm)) {
+    @media (max-width: 640px) {
         .card-content {
             padding: var(--space-4);
         }

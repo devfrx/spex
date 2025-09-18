@@ -178,6 +178,22 @@ export const useBuildsStore = defineStore("builds", {
       this.currentBuild = build;
     },
 
+    clearAllComponentsFromBuild(buildId: string): void {
+      const build = this.getBuildById(buildId);
+      if (!build) throw new Error("Build non trovata");
+      build.componentsByCategory = this.initializeEmptyCategories();
+      build.totalPrice = 0;
+      build.updatedAt = new Date();
+      if (this.currentBuild?.id === buildId) {
+        this.currentBuild = build;
+      }
+    },
+
+    clearAllBuilds(): void {
+      this.builds = [];
+      this.currentBuild = null;
+    },
+
     updateComponentReferences(updated: Component) {
       this.builds.forEach((build) => {
         let touched = false;

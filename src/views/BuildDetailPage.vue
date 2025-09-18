@@ -29,87 +29,42 @@
                                     </p>
                                 </div>
                             </div>
-
-                            <div class="header-actions">
-                                <button @click="exportBuild(buildId)" class="action-secondary export-btn">
-                                    <Icon icon="mdi:export" />
-                                    <span>Export</span>
-                                </button>
-                                <button @click="showAddComponentModal = true" class="action-primary">
-                                    <Icon icon="mdi:plus" />
-                                    <span>Add Component</span>
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </header>
 
                 <!-- Main Dashboard -->
                 <main v-if="build" class="dashboard">
-                    <!-- Performance Metrics -->
-                    <section class="metrics-section">
-                        <div class="section-header">
-                            <h2>Build Overview</h2>
-                            <div class="section-divider"></div>
-                        </div>
-
-                        <div class="metrics-grid">
-                            <div class="metric-card components">
-                                <div class="metric-visual">
-                                    <div class="metric-icon-wrapper">
-                                        <Icon icon="mdi:memory" />
-                                    </div>
-                                    <div class="metric-badge">{{ totalComponentsCount }}</div>
-                                </div>
-                                <div class="metric-info">
-                                    <h3>Components</h3>
-                                    <p>Installed parts</p>
-                                </div>
-                            </div>
-
-                            <div class="metric-card budget">
-                                <div class="metric-visual">
-                                    <div class="metric-icon-wrapper budget-icon">
-                                        <Icon icon="mdi:cash-multiple" />
-                                    </div>
-                                    <div class="metric-badge budget-badge">€{{ totalPrice.toFixed(0) }}</div>
-                                </div>
-                                <div class="metric-info">
-                                    <h3>Total Cost</h3>
-                                    <p>Current pricing</p>
-                                </div>
-                            </div>
-
-                            <div class="metric-card completion">
-                                <div class="metric-visual">
-                                    <div class="completion-ring">
-                                        <svg class="progress-circle" viewBox="0 0 100 100">
-                                            <circle cx="50" cy="50" r="45" class="progress-bg" />
-                                            <circle cx="50" cy="50" r="45" class="progress-bar"
-                                                :stroke-dasharray="`${getCompletionPercentage * 2.827} 282.7`" />
-                                        </svg>
-                                        <div class="progress-label">{{ getCompletionPercentage }}%</div>
-                                    </div>
-                                </div>
-                                <div class="metric-info">
-                                    <h3>Progress</h3>
-                                    <p>Build completion</p>
-                                    <div class="progress-status"
-                                        :class="`status-${getCompletionPercentage >= 100 ? 'complete' : getCompletionPercentage >= 75 ? 'high' : getCompletionPercentage >= 50 ? 'medium' : 'low'}`">
-                                        {{ getCompletionPercentage >= 100 ? 'Complete' : getCompletionPercentage >= 75 ?
-                                            'Almost Done' : getCompletionPercentage >= 50 ?
-                                                'In Progress' : 'Getting Started' }}
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </section>
 
                     <!-- Components Catalog -->
                     <section class="catalog-section">
                         <div class="section-header">
                             <h2>Component Catalog</h2>
                             <div class="section-divider"></div>
+                        </div>
+
+                        <div class="catalog-actions">
+                            <div class="actions-start">
+                                <button @click="exportBuild(buildId)" class="catalog-btn">
+                                    <Icon icon="mdi:export" />
+                                    <span class="catalog-btn-text">Export</span>
+                                </button>
+                                <button @click="showAddComponentModal = true" class="catalog-btn add-btn">
+                                    <Icon icon="mdi:plus" />
+                                    <span class="catalog-btn-text">Add Component</span>
+                                </button>
+                                <button v-if="hasNewComponents" @click="importNewComponents"
+                                    class="catalog-btn import-new-btn">
+                                    <Icon icon="mdi:import" />
+                                    <span class="catalog-btn-text">Import New Components</span>
+                                </button>
+                            </div>
+                            <div class="actions-end">
+                                <button @click="clearAllComponents" class="catalog-btn remove-btn">
+                                    <Icon icon="mdi:delete" />
+                                    <span class="catalog-btn-text">Clear all</span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="catalog-grid">
@@ -123,7 +78,8 @@
                                             <h3>{{ getCategoryName(category) }}</h3>
                                             <span class="component-counter">
                                                 {{ getComponentsByCategory(category).length }}
-                                                {{ getComponentsByCategory(category).length === 1 ? 'item' : 'items' }}
+                                                {{ getComponentsByCategory(category).length === 1 ? 'item' : 'items'
+                                                }}
                                             </span>
                                         </div>
                                     </div>
@@ -205,6 +161,65 @@
                                                 Add {{ getCategoryName(category) }}
                                             </button>
                                         </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Performance Metrics -->
+                    <section class="metrics-section">
+                        <div class="section-header">
+                            <h2>Build Overview</h2>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="metrics-grid">
+                            <div class="metric-card components">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper">
+                                        <Icon icon="mdi:memory" />
+                                    </div>
+                                    <div class="metric-badge">{{ totalComponentsCount }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Components</h3>
+                                    <p>Installed parts</p>
+                                </div>
+                            </div>
+
+                            <div class="metric-card budget">
+                                <div class="metric-visual">
+                                    <div class="metric-icon-wrapper budget-icon">
+                                        <Icon icon="mdi:cash-multiple" />
+                                    </div>
+                                    <div class="metric-badge budget-badge">€{{ totalPrice.toFixed(0) }}</div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Total Cost</h3>
+                                    <p>Current pricing</p>
+                                </div>
+                            </div>
+
+                            <div class="metric-card completion">
+                                <div class="metric-visual">
+                                    <div class="completion-ring">
+                                        <svg class="progress-circle" viewBox="0 0 100 100">
+                                            <circle cx="50" cy="50" r="45" class="progress-bg" />
+                                            <circle cx="50" cy="50" r="45" class="progress-bar"
+                                                :stroke-dasharray="`${getCompletionPercentage * 2.827} 282.7`" />
+                                        </svg>
+                                        <div class="progress-label">{{ getCompletionPercentage }}%</div>
+                                    </div>
+                                </div>
+                                <div class="metric-info">
+                                    <h3>Progress</h3>
+                                    <p>Build completion</p>
+                                    <div class="progress-status"
+                                        :class="`status-${getCompletionPercentage >= 100 ? 'complete' : getCompletionPercentage >= 75 ? 'high' : getCompletionPercentage >= 50 ? 'medium' : 'low'}`">
+                                        {{ getCompletionPercentage >= 100 ? 'Complete' : getCompletionPercentage >= 75 ?
+                                            'Almost Done' : getCompletionPercentage >= 50 ?
+                                                'In Progress' : 'Getting Started' }}
                                     </div>
                                 </div>
                             </div>
@@ -416,6 +431,49 @@
     const componentNotExists = computed(() => {
         return (component: Component) => !componentsStore.getComponentById(component.id);
     });
+
+    const hasNewComponents = computed(() => {
+        if (!build.value) return false;
+        const components = buildsStore.getAllComponents(build.value);
+        return components.some(component => componentNotExists.value(component));
+    });
+
+    const clearAllComponents = async () => {
+        if (!build.value) return;
+
+        const confirmed = await confirm('Are you sure you want to remove all components from this build?');
+
+        if (confirmed) {
+            try {
+                await buildsStore.clearAllComponentsFromBuild(build.value.id);
+                success('All components removed from the build.');
+            } catch (err) {
+                console.error('Error clearing components:', err);
+                error('Failed to clear components. Please try again.');
+            }
+        }
+    };
+
+    const importNewComponents = async () => {
+        if (!build.value) return;
+
+        const confirmed = await confirm('Import all new components from this build into your library?');
+
+        if (confirmed) {
+            try {
+                const components = buildsStore.getAllComponents(build.value);
+                for (const component of components) {
+                    if (componentNotExists.value(component)) {
+                        componentsStore.addComponent(component);
+                    }
+                }
+                success('All new components imported successfully!');
+            } catch (err) {
+                console.error('Error importing components:', err);
+                error('Failed to import components. Please try again.');
+            }
+        }
+    };
 
     // const fetchProductInfo = async () => {
     //     if (!amazonUrl.value.trim()) {
@@ -682,63 +740,6 @@
         line-height: var(--line-height-normal);
     }
 
-    .header-actions {
-        display: flex;
-        gap: var(--space-4);
-    }
-
-    .action-primary {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-3) var(--space-6);
-        background: var(--gradient-primary);
-        border: none;
-        border-radius: var(--radius-lg);
-        color: var(--color-white);
-        font-weight: var(--font-weight-semibold);
-        cursor: pointer;
-        transition: var(--transition-medium);
-        box-shadow: var(--shadow-primary);
-    }
-
-    .action-primary:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.5);
-    }
-
-    .action-secondary {
-        display: flex;
-        align-items: center;
-        gap: var(--space-3);
-        padding: var(--space-3) var(--space-6);
-        background: var(--color-warning);
-        border: var(--border-thin) solid rgba(var(--color-warning-rgb), 0.2);
-        border-radius: var(--radius-lg);
-        color: var(--color-text-dark);
-        font-weight: var(--font-weight-semibold);
-        cursor: pointer;
-        transition: var(--transition-medium);
-        box-shadow: 0 4px 12px rgba(var(--color-accent-rgb), 0.1);
-    }
-
-    .action-secondary:hover {
-        transform: translateY(-2px);
-        border-color: rgba(var(--color-primary-rgb), 0.4);
-        box-shadow: 0 8px 25px rgba(var(--color-primary-rgb), 0.3);
-    }
-
-    .action-secondary.export-btn {
-        background: var(--color-info);
-        border-color: rgba(var(--color-info-rgb), 0.2);
-        color: var(--color-white);
-    }
-
-    .action-secondary.export-btn:hover {
-        border-color: rgba(var(--color-info-rgb), 0.4);
-        box-shadow: 0 8px 25px rgba(var(--color-info-rgb), 0.3);
-    }
-
     /* Dashboard Layout */
     .dashboard {
         position: relative;
@@ -770,6 +771,82 @@
         border-radius: var(--radius-full);
     }
 
+    .catalog-actions {
+        display: flex;
+        gap: var(--space-4);
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: var(--space-6);
+    }
+
+    .actions-start {
+        display: flex;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-start;
+        flex: 1;
+    }
+
+    .actions-end {
+        display: flex;
+        gap: var(--space-4);
+        flex-wrap: wrap;
+        align-items: stretch;
+        justify-content: flex-end;
+        flex: 1;
+    }
+
+    .catalog-btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-4) var(--space-6);
+        background: var(--color-primary);
+        border: none;
+        border-radius: var(--radius-md);
+        color: var(--color-white);
+        font-size: var(--font-size-md);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: var(--transition-fast);
+    }
+
+    .catalog-btn:hover {
+        box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
+    .catalog-btn.add-btn {
+        background: var(--color-success);
+    }
+
+    .catalog-btn.add-btn:hover {
+        background: var(--color-success-dark);
+        box-shadow: 0 6px 20px rgba(var(--color-success-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
+    .catalog-btn.import-new-btn {
+        background: var(--color-warning);
+    }
+
+    .catalog-btn.import-new-btn:hover {
+        background: var(--color-warning-dark);
+        box-shadow: 0 6px 20px rgba(var(--color-warning-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
+    .catalog-btn.remove-btn {
+        background: var(--color-error);
+    }
+
+    .catalog-btn.remove-btn:hover {
+        background: var(--color-error-dark);
+        box-shadow: 0 6px 20px rgba(var(--color-error-rgb), 0.4);
+        transform: translateY(-2px);
+    }
+
     /* Premium Metrics */
     .metrics-section {
         margin-bottom: var(--space-16);
@@ -793,17 +870,6 @@
         backdrop-filter: blur(var(--blur-sm));
         position: relative;
         overflow: hidden;
-    }
-
-    .metric-card::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        height: 3px;
-        background: var(--gradient-primary);
-        opacity: var(--opacity-80);
     }
 
     .metric-card:hover {
@@ -977,7 +1043,9 @@
         justify-content: space-between;
         padding: var(--space-4) var(--space-6);
         background: rgba(var(--color-surface-dark-rgb), 0.6);
-        border-bottom: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
+        margin: var(--space-2);
+        border-radius: var(--radius-lg);
+        border: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
     }
 
     .category-identity {
@@ -1062,7 +1130,7 @@
 
     .card-image {
         width: 100%;
-        height: 120px;
+        height: 140px;
         background: rgba(var(--color-surface-dark-rgb), 0.6);
         border-bottom: var(--border-thin) solid rgba(var(--color-primary-rgb), 0.1);
         display: flex;
@@ -1075,7 +1143,7 @@
     .card-image img {
         width: 100%;
         height: 100%;
-        object-fit: cover;
+        object-fit: contain;
         transition: var(--transition-medium);
     }
 
@@ -1167,8 +1235,8 @@
     }
 
     .action-btn {
-        width: 32px;
-        height: 32px;
+        width: 40px;
+        height: 40px;
         background: rgba(var(--color-primary-rgb), 0.1);
         border: none;
         border-radius: var(--radius-md);
@@ -1178,7 +1246,7 @@
         align-items: center;
         justify-content: center;
         transition: var(--transition-fast);
-        font-size: var(--font-size-sm);
+        font-size: var(--font-size-xl);
         text-decoration: none;
     }
 
@@ -1279,7 +1347,7 @@
         padding: var(--space-2) var(--space-4);
         background: var(--gradient-primary);
         border: none;
-        border-radius: var(--radius-lg);
+        border-radius: var(--radius-sm);
         color: var(--color-white);
         font-weight: var(--font-weight-semibold);
         cursor: pointer;
@@ -1543,7 +1611,7 @@
     }
 
     /* Responsive Design */
-    @media (max-width: var(--breakpoint-xl)) {
+    @media (max-width: 1536px) {
         .catalog-grid {
             grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
         }
@@ -1553,7 +1621,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-lg)) {
+    @media (max-width: 1024px) {
         .dashboard {
             padding: var(--space-8) var(--space-6);
         }
@@ -1581,7 +1649,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-md)) {
+    @media (max-width: 768px) {
 
         .header-content,
         .dashboard {
@@ -1601,11 +1669,6 @@
 
         .build-name {
             font-size: var(--font-size-2xl);
-        }
-
-        .action-primary span,
-        .action-secondary span {
-            display: none;
         }
 
         .panel-header {
@@ -1632,9 +1695,17 @@
         .input-group.premium {
             flex-direction: column;
         }
+
+        .catalog-btn-text {
+            display: none !important;
+        }
+
+        .catalog-btn {
+            min-width: auto !important;
+        }
     }
 
-    @media (max-width: var(--breakpoint-sm)) {
+    @media (max-width: 640px) {
         .dashboard {
             padding: var(--space-6) var(--space-4);
         }
@@ -1667,6 +1738,10 @@
             width: 28px;
             height: 28px;
             font-size: var(--font-size-xs);
+        }
+
+        .catalog-btn-text {
+            display: none !important;
         }
     }
 </style>

@@ -1366,7 +1366,7 @@
     }
 
     /* Responsive Design */
-    @media (max-width: var(--breakpoint-lg)) {
+    @media (max-width: 1024px) {
         .dashboard-grid {
             grid-template-columns: 1fr;
             gap: var(--space-8);
@@ -1377,7 +1377,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-md)) {
+    @media (max-width: 768px) {
 
         .header-content,
         .dashboard {
@@ -1415,7 +1415,7 @@
         }
     }
 
-    @media (max-width: var(--breakpoint-sm)) {
+    @media (max-width: 640px) {
         .dashboard {
             padding: var(--space-6) var(--space-4);
         }

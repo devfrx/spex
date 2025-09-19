@@ -9,6 +9,7 @@ export interface Component {
   imageUrl?: string;
   createdAt: Date;
   updatedAt: Date;
+  token?: string; // Aggiunto per export
 }
 
 export interface PCBuild {
@@ -20,6 +21,7 @@ export interface PCBuild {
   totalPrice: number;
   createdAt: Date;
   updatedAt: Date;
+  token?: string; // Aggiunto per export
 }
 
 // Manteniamo l'enum esistente

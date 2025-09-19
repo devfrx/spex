@@ -61,6 +61,24 @@ export const useComponentsStore = defineStore("components", {
       }
     },
 
+    async updateAllPrices() {
+      for (const comp of this.components) {
+        if (comp.amazonUrl) {
+          try {
+            const updatedInfo = await this.fetchAmazonProductInfo(
+              comp.amazonUrl
+            );
+            if (updatedInfo.price && updatedInfo.price !== comp.price) {
+              comp.price = updatedInfo.price;
+              comp.updatedAt = new Date();
+            }
+          } catch (error) {
+            console.error("Errore aggiornamento prezzi:", error);
+          }
+        }
+      }
+    },
+
     getMockAmazonData(url: string): AmazonProductInfo {
       // Mock data per simulare l'API Amazon
       const mockProducts: Record<string, AmazonProductInfo> = {

@@ -41,21 +41,22 @@
                             <div class="section-divider"></div>
                         </div>
 
-                        <div class="collection-actions">
+                        <div class="build-actions">
                             <div class="actions-start">
-                                <button @click="onChooseFile()" class="collection-btn">
+                                <button @click="onChooseFile()" class="build-btn">
                                     <Icon icon="mdi:import" />
                                     <span>Import</span>
                                 </button>
-                                <button @click="createNewBuild" class="collection-btn add-btn">
+                                <button @click="createNewBuild" class="build-btn add-btn">
                                     <Icon icon="mdi:plus" />
-                                    <span>New Build</span>
+                                    <span class="build-btn-text">New Build</span>
                                 </button>
                             </div>
                             <div class="actions-end">
-                                <button @click="handleClearAllBuilds" class="collection-btn remove-btn">
+                                <button @click="handleClearAllBuilds" :disabled="!hasBuilds"
+                                    class="build-btn remove-btn" :class="!hasBuilds ? 'disabled-btn' : ''">
                                     <Icon icon="mdi:delete" />
-                                    <span class="catalog-btn-text">Clear all</span>
+                                    <span class="build-btn-text">Clear all</span>
                                 </button>
                             </div>
                         </div>
@@ -341,6 +342,10 @@
             console.error('Errore nella creazione della build:', error);
         }
     };
+
+    const hasBuilds = computed(() => {
+        return buildsStore.totalBuilds > 0;
+    });
 
     const openBuild = (build?: PCBuild) => {
         if (!build) return;
@@ -685,7 +690,7 @@
         border-radius: var(--radius-full);
     }
 
-    .collection-actions {
+    .build-actions {
         display: flex;
         gap: var(--space-4);
         align-items: center;
@@ -711,7 +716,7 @@
         flex: 1;
     }
 
-    .collection-btn {
+    .build-btn {
         display: flex;
         align-items: center;
         gap: var(--space-2);
@@ -726,26 +731,35 @@
         transition: var(--transition-fast);
     }
 
-    .collection-btn:hover {
+    .build-btn:hover {
         box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
         transform: translateY(-2px);
     }
 
-    .collection-btn.add-btn {
+    .build-btn.add-btn {
         background: var(--color-success);
     }
 
-    .collection-btn.add-btn:hover {
+    .build-btn.add-btn:hover {
         background: var(--color-success-dark);
         box-shadow: 0 6px 20px rgba(var(--color-success-rgb), 0.4);
         transform: translateY(-2px);
     }
 
-    .collection-btn.remove-btn {
+    .build-btn.remove-btn {
         background: var(--color-error);
     }
 
-    .collection-btn.remove-btn:hover {
+
+    .build-btn.remove-btn.disabled-btn,
+    .build-btn.remove-btn.disabled-btn:hover {
+        opacity: .3;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+    }
+
+    .build-btn.remove-btn:hover {
         background: var(--color-error-dark);
         box-shadow: 0 6px 20px rgba(var(--color-error-rgb), 0.4);
         transform: translateY(-2px);

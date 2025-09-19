@@ -1,13 +1,42 @@
 import { useComponentsStore } from "@/stores/useComponentsStore";
+import { computeSHA256Hex } from "@/composables/sha256hash";
 
 const componentsStore = useComponentsStore();
 
 export const importComponent = async (file: File) => {
-  if (!file) return;
+  if (!file) return false;
 
   const json = await file.text();
-  const componentData = JSON.parse(json);
+  const parsed = JSON.parse(json);
+
+  // Support legacy single-object export or new { component, token } format
+  let componentData: any;
+  let receivedToken: string | undefined;
+
+  if (parsed && parsed.component) {
+    componentData = parsed.component;
+    receivedToken = parsed.token;
+  } else {
+    componentData = parsed;
+  }
+
+  // verify token if present
+  if (receivedToken) {
+    const payloadJson = JSON.stringify(componentData);
+    const expected = await computeSHA256Hex(payloadJson + "_component");
+    if (receivedToken !== expected) {
+      throw new Error("Componente non valido (token mismatch).");
+    }
+  }
+
+  // normalize dates
+  if (componentData.createdAt)
+    componentData.createdAt = new Date(componentData.createdAt);
+  if (componentData.updatedAt)
+    componentData.updatedAt = new Date(componentData.updatedAt);
+
   componentsStore.addComponent(componentData);
+  return true;
 };
 
 /**

@@ -60,7 +60,8 @@
                                 </button>
                             </div>
                             <div class="actions-end">
-                                <button @click="clearAllComponents" class="catalog-btn remove-btn">
+                                <button @click="clearAllComponents" :disabled="!hasComponents"
+                                    class="catalog-btn remove-btn" :class="!hasComponents ? 'disabled-btn' : ''">
                                     <Icon icon="mdi:delete" />
                                     <span class="catalog-btn-text">Clear all</span>
                                 </button>
@@ -430,6 +431,11 @@
 
     const componentNotExists = computed(() => {
         return (component: Component) => !componentsStore.getComponentById(component.id);
+    });
+
+    const hasComponents = computed(() => {
+        if (!build.value) return false;
+        return buildsStore.getComponentsByBuild(buildId.value).length > 0;
     });
 
     const hasNewComponents = computed(() => {
@@ -839,6 +845,14 @@
 
     .catalog-btn.remove-btn {
         background: var(--color-error);
+    }
+
+    .catalog-btn.remove-btn.disabled-btn,
+    .catalog-btn.remove-btn.disabled-btn:hover {
+        opacity: .3;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
     }
 
     .catalog-btn.remove-btn:hover {

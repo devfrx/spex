@@ -53,6 +53,14 @@
                                     <input v-model="searchQuery" placeholder="Search components..."
                                         class="search-input premium" />
                                 </div>
+                                <div class="prices-refresh">
+                                    <button class="prices-btn" @click="componentsStore.updateAllPrices"
+                                        :disabled="componentsStore.loading">
+                                        <Icon :icon="componentsStore.loading ? 'mdi:loading' : 'mdi:refresh'"
+                                            :class="{ 'loading-spin': componentsStore.loading }" />
+                                        <span> Update Prices </span>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="filter-controls">
@@ -112,7 +120,8 @@
                                 </button>
                             </div>
                             <div class="actions-end">
-                                <button @click="handleClearAllComponents" class="collection-btn remove-btn">
+                                <button @click="handleClearAllComponents" :disabled="!hasComponents"
+                                    class="collection-btn remove-btn" :class="!hasComponents ? 'disabled-btn' : ''">
                                     <Icon icon="mdi:delete" />
                                     <span class="catalog-btn-text">Clear all</span>
                                 </button>
@@ -432,6 +441,10 @@
             await error('An error occurred during import. Please check the file format and try again.');
         }
     }
+
+    const hasComponents = computed(() => {
+        return componentsStore.components.length > 0;
+    });
 
     // Methods
     const goBack = () => {
@@ -925,6 +938,10 @@
     }
 
     .search-field {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: row;
         margin-bottom: var(--space-6);
     }
 
@@ -962,6 +979,32 @@
 
     .search-input.premium::placeholder {
         color: var(--color-text-muted);
+    }
+
+    .prices-refresh {
+        display: flex;
+        align-items: center;
+        gap: var(--space-4);
+    }
+
+    .prices-btn {
+        display: flex;
+        align-items: center;
+        gap: var(--space-2);
+        padding: var(--space-3) var(--space-5);
+        background: var(--color-primary);
+        border: none;
+        border-radius: var(--radius-md);
+        color: var(--color-white);
+        font-size: var(--font-size-sm);
+        font-weight: var(--font-weight-semibold);
+        cursor: pointer;
+        transition: var(--transition-medium);
+    }
+
+    .prices-btn:hover {
+        box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
+        transform: translateY(-2px);
     }
 
     .filter-controls {
@@ -1059,6 +1102,8 @@
         transition: var(--transition-fast);
     }
 
+    .disabled-btn {}
+
     .collection-btn:hover {
         box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
         transform: translateY(-2px);
@@ -1096,6 +1141,14 @@
 
     .collection-btn.remove-btn {
         background: var(--color-error);
+    }
+
+    .collection-btn.remove-btn.disabled-btn,
+    .collection-btn.remove-btn.disabled-btn:hover {
+        opacity: .3;
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
     }
 
     .collection-btn.remove-btn:hover {

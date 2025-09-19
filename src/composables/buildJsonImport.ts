@@ -1,13 +1,53 @@
 import { useBuildsStore } from "@/stores/useBuildsStore";
+import { computeSHA256Hex } from "@/composables/sha256hash";
 
 const buildsStore = useBuildsStore();
 
 export const importBuild = async (file: File) => {
-  if (!file) return;
+  if (!file) return false;
 
-  const json = await file.text();
-  const buildData = JSON.parse(json);
-  buildsStore.addBuild(buildData);
+  try {
+    const json = await file.text();
+    // Parse prima per ottenere l'oggetto (contiene il token)
+    const buildData = JSON.parse(json);
+
+    // Estrai token e ricostruisci il payload canonico (senza token)
+    const receivedToken = buildData.token;
+    const payloadCopy = { ...buildData };
+    delete (payloadCopy as any).token;
+    const payloadJson = JSON.stringify(payloadCopy);
+
+    const expectedHash = await computeSHA256Hex(payloadJson + "_build");
+
+    if (receivedToken !== expectedHash) {
+      throw new Error("Build non valida (token mismatch).");
+    }
+
+    // Normalizza date (string -> Date) sia per la build che per i componenti
+    if (buildData.createdAt)
+      buildData.createdAt = new Date(buildData.createdAt);
+    if (buildData.updatedAt)
+      buildData.updatedAt = new Date(buildData.updatedAt);
+    if (Array.isArray(buildData.componentsByCategory)) {
+      // vecchio formato migrato altrove; lasciare gestione se necessario
+    } else {
+      Object.values(buildData.componentsByCategory || {}).forEach(
+        (arr: any[]) => {
+          arr.forEach((c) => {
+            if (c.createdAt) c.createdAt = new Date(c.createdAt);
+            if (c.updatedAt) c.updatedAt = new Date(c.updatedAt);
+          });
+        }
+      );
+    }
+
+    await buildsStore.addBuild(buildData);
+    return true;
+  } catch (e) {
+    // Rilancia / logga per far vedere il problema al chiamante
+    console.error("Errore durante l'import del file:", (e as Error).message);
+    throw e;
+  }
 };
 
 /**

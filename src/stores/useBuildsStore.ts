@@ -11,6 +11,12 @@ export const useBuildsStore = defineStore("builds", {
     getBuildById: (state) => (id: string) =>
       state.builds.find((b) => b.id === id),
 
+    getComponentsByBuild: (state) => (buildId: string) => {
+      const build = state.builds.find((b) => b.id === buildId);
+      if (!build) return [];
+      return Object.values(build.componentsByCategory).flat();
+    },
+
     totalBuilds: (state) => state.builds.length,
 
     currentBuildTotalPrice: (state) => {

@@ -1,16 +1,54 @@
 import { useComponentsStore } from "@/stores/useComponentsStore";
+import { computeSHA256Hex } from "@/composables/sha256hash";
 
 const componentsStore = useComponentsStore();
 
 export const importComponentsCollection = async (file: File) => {
-  if (!file) return;
+  if (!file) return false;
 
   const json = await file.text();
-  const collectionData = JSON.parse(json);
-  for (const componentData of collectionData) {
+  const parsed = JSON.parse(json);
+
+  // Support legacy array export (no token) or new object { components, token }
+  if (Array.isArray(parsed)) {
+    // legacy
+    for (const componentData of parsed) {
+      normalizeDates(componentData);
+      componentsStore.addComponent(componentData);
+    }
+    return true;
+  }
+
+  const components = parsed.components;
+  const receivedToken = parsed.token;
+
+  if (!Array.isArray(components)) {
+    throw new Error("Formato collection non valido.");
+  }
+
+  // verify token if present
+  if (receivedToken) {
+    const payloadJson = JSON.stringify(components);
+    const expected = await computeSHA256Hex(payloadJson + "_collection");
+    if (receivedToken !== expected) {
+      throw new Error("Collection non valida (token mismatch).");
+    }
+  }
+
+  // add components
+  for (const componentData of components) {
+    normalizeDates(componentData);
     componentsStore.addComponent(componentData);
   }
+
+  return true;
 };
+
+function normalizeDates(obj: any) {
+  if (!obj) return;
+  if (obj.createdAt) obj.createdAt = new Date(obj.createdAt);
+  if (obj.updatedAt) obj.updatedAt = new Date(obj.updatedAt);
+}
 
 /**
  * Apre un file picker (accetta .json) e restituisce il file scelto o null se annullato.

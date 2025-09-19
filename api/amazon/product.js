@@ -128,6 +128,39 @@ class AmazonScraper {
     const browser = await getBrowser();
     const page = await browser.newPage();
 
+    // Injetta parsePrice PRIMA della navigazione
+    await page.evaluateOnNewDocument(() => {
+      window.parsePrice = function (priceText) {
+        if (!priceText) return 0;
+
+        let cleaned = priceText.replace(/[^\d.,]/g, "");
+        if (!cleaned) return 0;
+
+        if (cleaned.includes(".") && cleaned.includes(",")) {
+          if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+            cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+          } else {
+            cleaned = cleaned.replace(/,/g, "");
+          }
+        } else if (cleaned.includes(",")) {
+          const parts = cleaned.split(",");
+          if (parts[parts.length - 1].length === 2) {
+            cleaned = parts.join(".");
+          } else {
+            cleaned = cleaned.replace(/,/g, "");
+          }
+        } else if (cleaned.includes(".")) {
+          const parts = cleaned.split(".");
+          if (parts[parts.length - 1].length !== 2) {
+            cleaned = parts.join("");
+          }
+        }
+
+        const price = parseFloat(cleaned);
+        return isNaN(price) || price < 1 || price > 50000 ? 0 : price;
+      };
+    });
+
     // Blocca risorse pesanti per velocizzare
     await page.setRequestInterception(true);
     page.on("request", (req) => {
@@ -174,20 +207,30 @@ class AmazonScraper {
             ".a-size-large",
           ]) || "Prodotto non trovato";
 
-        // Estrazione prezzo migliorata con selettori specifici
+        // Selettori aggiornati per prezzi scontati e offerte
         const priceSelectors = [
-          // Prezzi principali più specifici per prodotti singoli
+          // Prezzi scontati (più priorità)
           ".a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen",
           ".a-price.a-text-price.a-size-medium.a-color-price .a-offscreen",
+          ".a-price.a-text-normal .a-offscreen",
+          ".a-price-current .a-offscreen",
+
+          // Prezzi standard
           "#priceblock_dealprice",
           "#priceblock_ourprice",
           ".a-price.a-price--base .a-offscreen",
+
           // Selettori generici come fallback
           ".a-price .a-offscreen",
           "#price_inside_buybox",
           ".a-price-range .a-price .a-offscreen",
           ".a-price-whole",
           '[data-testid="price-current"]',
+
+          // Selettori per layout specifici
+          ".a-section .a-price .a-offscreen",
+          "[data-a-color='price'] .a-offscreen",
+          ".a-text-price .a-offscreen",
         ];
 
         // Raccoglie tutti i prezzi trovati per debug e validazione
@@ -198,14 +241,16 @@ class AmazonScraper {
           elements.forEach((el) => {
             if (el && el.textContent) {
               const priceText = el.textContent.trim();
-              const cleaned = priceText.replace(/[^\d.,]/g, "");
 
-              if (cleaned) {
+              if (priceText && priceText.length > 0) {
+                console.log(
+                  `[DEBUG] Found price text: "${priceText}" with selector: ${selector}`
+                );
+
                 const parsed = window.parsePrice
                   ? window.parsePrice(priceText)
                   : 0;
                 if (parsed > 0 && parsed < 50000) {
-                  // Filtro prezzi ragionevoli
                   foundPrices.push({
                     selector,
                     text: priceText,
@@ -220,27 +265,44 @@ class AmazonScraper {
         // Logica di selezione del prezzo migliore
         let bestPrice = 0;
         if (foundPrices.length > 0) {
-          // Se ci sono più prezzi simili, prendi il più comune
-          const priceGroups = {};
-          foundPrices.forEach((p) => {
-            const rounded = Math.round(p.parsed);
-            priceGroups[rounded] = (priceGroups[rounded] || 0) + 1;
-          });
+          console.log(
+            `[DEBUG] Found ${foundPrices.length} valid prices:`,
+            foundPrices
+          );
 
-          const mostCommon = Object.keys(priceGroups).sort(
-            (a, b) => priceGroups[b] - priceGroups[a]
-          )[0];
+          // Prendi il primo prezzo valido (i selettori sono ordinati per priorità)
+          bestPrice = foundPrices[0].parsed;
+        } else {
+          console.log(
+            "[DEBUG] No prices found with selectors, trying fallback..."
+          );
 
-          bestPrice = parseFloat(mostCommon);
+          // Fallback: cerca qualsiasi testo che assomiglia a un prezzo
+          const allText = document.body.innerText || "";
+          const priceMatches = allText.match(/€\s*[\d.,]+|[\d.,]+\s*€/g);
+
+          if (priceMatches) {
+            console.log(
+              `[DEBUG] Fallback found price candidates:`,
+              priceMatches
+            );
+            for (const match of priceMatches) {
+              const parsed = window.parsePrice ? window.parsePrice(match) : 0;
+              if (parsed > 50 && parsed < 5000) {
+                // Range più ragionevole per CPU
+                bestPrice = parsed;
+                foundPrices.push({
+                  selector: "fallback-text-search",
+                  text: match,
+                  parsed: parsed,
+                });
+                break;
+              }
+            }
+          }
         }
 
-        // Fallback: parsing diretto se bestPrice è 0
-        if (bestPrice === 0) {
-          const priceRaw = pickText(priceSelectors) || "0";
-          bestPrice = window.parsePrice ? window.parsePrice(priceRaw) : 0;
-        }
-
-        // Estrazione specifiche
+        // Estrazione specifiche (resto del codice rimane uguale)
         const specs = [];
 
         // Feature bullets
@@ -313,39 +375,6 @@ class AmazonScraper {
               parsed: p.parsed,
             })),
           },
-        };
-      });
-
-      // Injetta la funzione parsePrice nel context della pagina per debug
-      await page.evaluateOnNewDocument(() => {
-        window.parsePrice = function (priceText) {
-          if (!priceText) return 0;
-
-          let cleaned = priceText.replace(/[^\d.,]/g, "");
-          if (!cleaned) return 0;
-
-          if (cleaned.includes(".") && cleaned.includes(",")) {
-            if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
-              cleaned = cleaned.replace(/\./g, "").replace(",", ".");
-            } else {
-              cleaned = cleaned.replace(/,/g, "");
-            }
-          } else if (cleaned.includes(",")) {
-            const parts = cleaned.split(",");
-            if (parts[parts.length - 1].length === 2) {
-              cleaned = parts.join(".");
-            } else {
-              cleaned = cleaned.replace(/,/g, "");
-            }
-          } else if (cleaned.includes(".")) {
-            const parts = cleaned.split(".");
-            if (parts[parts.length - 1].length !== 2) {
-              cleaned = parts.join("");
-            }
-          }
-
-          const price = parseFloat(cleaned);
-          return isNaN(price) || price < 1 || price > 50000 ? 0 : price;
         };
       });
 

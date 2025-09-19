@@ -182,7 +182,7 @@ export const useComponentsStore = defineStore("components", {
     getCategoryDisplayName(category: ComponentCategory): string {
       const names: Record<ComponentCategory, string> = {
         [ComponentCategory.CASE]: "Case",
-        [ComponentCategory.CPU]: "Processore",
+        [ComponentCategory.CPU]: "CPU",
         [ComponentCategory.MOTHERBOARD]: "Motherboard",
         [ComponentCategory.GPU]: "Graphics Card",
         [ComponentCategory.MEMORY]: "Memory",

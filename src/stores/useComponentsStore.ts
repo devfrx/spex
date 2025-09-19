@@ -69,8 +69,15 @@ export const useComponentsStore = defineStore("components", {
               comp.amazonUrl
             );
             if (updatedInfo.price && updatedInfo.price !== comp.price) {
+              console.log("OLD " + comp.title + " PRICE: ", comp.price);
+              console.log(
+                "NEW " + updatedInfo.title + " PRICE: ",
+                updatedInfo.price
+              );
               comp.price = updatedInfo.price;
               comp.updatedAt = new Date();
+            } else {
+              console.log(comp.title + " HAS SAME PRICE: ", comp.price);
             }
           } catch (error) {
             console.error("Errore aggiornamento prezzi:", error);

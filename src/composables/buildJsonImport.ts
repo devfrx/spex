@@ -23,22 +23,22 @@ export const importBuild = async (file: File) => {
       throw new Error("Build non valida (token mismatch).");
     }
 
-    // Normalizza date (string -> Date) sia per la build che per i componenti
+    // Normalizzo date (string -> Date) sia per la build che per i componenti
     if (buildData.createdAt)
       buildData.createdAt = new Date(buildData.createdAt);
     if (buildData.updatedAt)
       buildData.updatedAt = new Date(buildData.updatedAt);
     if (Array.isArray(buildData.componentsByCategory)) {
-      // vecchio formato migrato altrove; lasciare gestione se necessario
     } else {
-      Object.values(buildData.componentsByCategory || {}).forEach(
-        (arr: any[]) => {
-          arr.forEach((c) => {
-            if (c.createdAt) c.createdAt = new Date(c.createdAt);
-            if (c.updatedAt) c.updatedAt = new Date(c.updatedAt);
-          });
-        }
-      );
+      const categories = Object.values(
+        buildData.componentsByCategory || {}
+      ) as any[];
+      categories.forEach((arr: any[]) => {
+        arr.forEach((c: any) => {
+          if (c.createdAt) c.createdAt = new Date(c.createdAt);
+          if (c.updatedAt) c.updatedAt = new Date(c.updatedAt);
+        });
+      });
     }
 
     await buildsStore.addBuild(buildData);

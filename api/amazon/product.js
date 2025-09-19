@@ -209,6 +209,24 @@ class AmazonScraper {
 
         // Selettori aggiornati per prezzi scontati e offerte
         const priceSelectors = [
+          // Selettori specifici per prezzi scontati Amazon
+          '.a-price[data-a-strike="true"] + .a-price .a-offscreen', // Prezzo dopo quello barrato
+          ".a-price-strike + .a-price .a-offscreen",
+          '.a-section[data-feature-name="apex"] .a-price .a-offscreen:first-child',
+          ".apex_desktop .a-price .a-offscreen:first-child",
+          ".a-accordion-row .a-price .a-offscreen:first-child",
+
+          // Layout specifici per deal/offerte
+          '[data-testid="price-to-pay"] .a-offscreen',
+          ".a-price-to-pay .a-offscreen",
+          ".dealPriceText .a-offscreen",
+          ".a-color-price.a-size-medium .a-offscreen",
+
+          // Selettori esistenti (ordine di priorità modificato)
+          ".a-price.a-text-normal .a-offscreen",
+          ".a-price-current .a-offscreen",
+          ".a-price-deal .a-offscreen",
+
           // Selettori specifici per prodotti con sconti pesanti
           ".a-price-deal .a-offscreen",
           ".a-price-strike .a-offscreen",
@@ -287,37 +305,22 @@ class AmazonScraper {
             foundPrices
           );
 
-          // Prendi il primo prezzo valido (i selettori sono ordinati per priorità)
-          bestPrice = foundPrices[0].parsed;
-        } else {
-          console.log(
-            "[DEBUG] No prices found with selectors, trying fallback..."
-          );
+          // Logica migliorata: cerca il prezzo più basso tra i primi 5 risultati
+          // (per evitare prezzi random di prodotti correlati)
+          const topPrices = foundPrices.slice(0, 5).map((p) => p.parsed);
+          const minPrice = Math.min(...topPrices);
+          const maxPrice = Math.max(...topPrices);
 
-          // Fallback: cerca qualsiasi testo che assomiglia a un prezzo
-          const allText = document.body.innerText || "";
-          const priceMatches = allText.match(
-            /€\s*[\d]{1,4}[.,][\d]{2}|[\d]{1,4}[.,][\d]{2}\s*€|€\s*[\d]{2,4}(?=[^\d])|[\d]{2,4}(?=\s*€)/g
-          );
-
-          if (priceMatches) {
+          // Se c'è una differenza significativa (>10%), prendi il più basso
+          if (maxPrice - minPrice > maxPrice * 0.1) {
+            bestPrice = minPrice;
             console.log(
-              `[DEBUG] Fallback found price candidates:`,
-              priceMatches
+              `[DEBUG] Using lowest price from top results: ${minPrice}`
             );
-            for (const match of priceMatches) {
-              const parsed = window.parsePrice ? window.parsePrice(match) : 0;
-              // Range più specifico per CPU premium
-              if (parsed > 100 && parsed < 2000) {
-                bestPrice = parsed;
-                foundPrices.push({
-                  selector: "fallback-text-search",
-                  text: match,
-                  parsed: parsed,
-                });
-                break;
-              }
-            }
+          } else {
+            // Altrimenti prendi il primo (priorità selettori)
+            bestPrice = foundPrices[0].parsed;
+            console.log(`[DEBUG] Using first priority price: ${bestPrice}`);
           }
         }
 

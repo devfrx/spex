@@ -128,39 +128,6 @@ class AmazonScraper {
     const browser = await getBrowser();
     const page = await browser.newPage();
 
-    // Injetta parsePrice PRIMA della navigazione
-    await page.evaluateOnNewDocument(() => {
-      window.parsePrice = function (priceText) {
-        if (!priceText) return 0;
-
-        let cleaned = priceText.replace(/[^\d.,]/g, "");
-        if (!cleaned) return 0;
-
-        if (cleaned.includes(".") && cleaned.includes(",")) {
-          if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
-            cleaned = cleaned.replace(/\./g, "").replace(",", ".");
-          } else {
-            cleaned = cleaned.replace(/,/g, "");
-          }
-        } else if (cleaned.includes(",")) {
-          const parts = cleaned.split(",");
-          if (parts[parts.length - 1].length === 2) {
-            cleaned = parts.join(".");
-          } else {
-            cleaned = cleaned.replace(/,/g, "");
-          }
-        } else if (cleaned.includes(".")) {
-          const parts = cleaned.split(".");
-          if (parts[parts.length - 1].length !== 2) {
-            cleaned = parts.join("");
-          }
-        }
-
-        const price = parseFloat(cleaned);
-        return isNaN(price) || price < 1 || price > 50000 ? 0 : price;
-      };
-    });
-
     // Blocca risorse pesanti per velocizzare
     await page.setRequestInterception(true);
     page.on("request", (req) => {
@@ -207,65 +174,20 @@ class AmazonScraper {
             ".a-size-large",
           ]) || "Prodotto non trovato";
 
-        // Selettori aggiornati per prezzi scontati e offerte
+        // Estrazione prezzo migliorata con selettori specifici
         const priceSelectors = [
-          // Selettori specifici per prezzi scontati Amazon
-          '.a-price[data-a-strike="true"] + .a-price .a-offscreen', // Prezzo dopo quello barrato
-          ".a-price-strike + .a-price .a-offscreen",
-          '.a-section[data-feature-name="apex"] .a-price .a-offscreen:first-child',
-          ".apex_desktop .a-price .a-offscreen:first-child",
-          ".a-accordion-row .a-price .a-offscreen:first-child",
-
-          // Layout specifici per deal/offerte
-          '[data-testid="price-to-pay"] .a-offscreen',
-          ".a-price-to-pay .a-offscreen",
-          ".dealPriceText .a-offscreen",
-          ".a-color-price.a-size-medium .a-offscreen",
-
-          // Selettori esistenti (ordine di priorità modificato)
-          ".a-price.a-text-normal .a-offscreen",
-          ".a-price-current .a-offscreen",
-          ".a-price-deal .a-offscreen",
-
-          // Selettori specifici per prodotti con sconti pesanti
-          ".a-price-deal .a-offscreen",
-          ".a-price-strike .a-offscreen",
-          ".a-price-savings .a-offscreen",
-          ".apexPriceToPay .a-offscreen",
-          ".a-price-to-pay .a-offscreen",
-
-          // Selettori per layout di offerte speciali
-          '[data-cy="price-recipe"] .a-offscreen',
-          ".reinventPriceAccordionHeaderPillDivider + .a-price .a-offscreen",
-
-          // Prezzi scontati (più priorità) - esistenti
+          // Prezzi principali più specifici per prodotti singoli
           ".a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen",
           ".a-price.a-text-price.a-size-medium.a-color-price .a-offscreen",
-          ".a-price.a-text-normal .a-offscreen",
-          ".a-price-current .a-offscreen",
-
-          // Prezzi scontati (più priorità)
-          ".a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen",
-          ".a-price.a-text-price.a-size-medium.a-color-price .a-offscreen",
-          ".a-price.a-text-normal .a-offscreen",
-          ".a-price-current .a-offscreen",
-
-          // Prezzi standard
           "#priceblock_dealprice",
           "#priceblock_ourprice",
           ".a-price.a-price--base .a-offscreen",
-
           // Selettori generici come fallback
           ".a-price .a-offscreen",
           "#price_inside_buybox",
           ".a-price-range .a-price .a-offscreen",
           ".a-price-whole",
           '[data-testid="price-current"]',
-
-          // Selettori per layout specifici
-          ".a-section .a-price .a-offscreen",
-          "[data-a-color='price'] .a-offscreen",
-          ".a-text-price .a-offscreen",
         ];
 
         // Raccoglie tutti i prezzi trovati per debug e validazione
@@ -276,16 +198,14 @@ class AmazonScraper {
           elements.forEach((el) => {
             if (el && el.textContent) {
               const priceText = el.textContent.trim();
+              const cleaned = priceText.replace(/[^\d.,]/g, "");
 
-              if (priceText && priceText.length > 0) {
-                console.log(
-                  `[DEBUG] Found price text: "${priceText}" with selector: ${selector}`
-                );
-
+              if (cleaned) {
                 const parsed = window.parsePrice
                   ? window.parsePrice(priceText)
                   : 0;
                 if (parsed > 0 && parsed < 50000) {
+                  // Filtro prezzi ragionevoli
                   foundPrices.push({
                     selector,
                     text: priceText,
@@ -300,31 +220,27 @@ class AmazonScraper {
         // Logica di selezione del prezzo migliore
         let bestPrice = 0;
         if (foundPrices.length > 0) {
-          console.log(
-            `[DEBUG] Found ${foundPrices.length} valid prices:`,
-            foundPrices
-          );
+          // Se ci sono più prezzi simili, prendi il più comune
+          const priceGroups = {};
+          foundPrices.forEach((p) => {
+            const rounded = Math.round(p.parsed);
+            priceGroups[rounded] = (priceGroups[rounded] || 0) + 1;
+          });
 
-          // Logica migliorata: cerca il prezzo più basso tra i primi 5 risultati
-          // (per evitare prezzi random di prodotti correlati)
-          const topPrices = foundPrices.slice(0, 5).map((p) => p.parsed);
-          const minPrice = Math.min(...topPrices);
-          const maxPrice = Math.max(...topPrices);
+          const mostCommon = Object.keys(priceGroups).sort(
+            (a, b) => priceGroups[b] - priceGroups[a]
+          )[0];
 
-          // Se c'è una differenza significativa (>10%), prendi il più basso
-          if (maxPrice - minPrice > maxPrice * 0.1) {
-            bestPrice = minPrice;
-            console.log(
-              `[DEBUG] Using lowest price from top results: ${minPrice}`
-            );
-          } else {
-            // Altrimenti prendi il primo (priorità selettori)
-            bestPrice = foundPrices[0].parsed;
-            console.log(`[DEBUG] Using first priority price: ${bestPrice}`);
-          }
+          bestPrice = parseFloat(mostCommon);
         }
 
-        // Estrazione specifiche (resto del codice rimane uguale)
+        // Fallback: parsing diretto se bestPrice è 0
+        if (bestPrice === 0) {
+          const priceRaw = pickText(priceSelectors) || "0";
+          bestPrice = window.parsePrice ? window.parsePrice(priceRaw) : 0;
+        }
+
+        // Estrazione specifiche
         const specs = [];
 
         // Feature bullets
@@ -397,6 +313,39 @@ class AmazonScraper {
               parsed: p.parsed,
             })),
           },
+        };
+      });
+
+      // Injetta la funzione parsePrice nel context della pagina per debug
+      await page.evaluateOnNewDocument(() => {
+        window.parsePrice = function (priceText) {
+          if (!priceText) return 0;
+
+          let cleaned = priceText.replace(/[^\d.,]/g, "");
+          if (!cleaned) return 0;
+
+          if (cleaned.includes(".") && cleaned.includes(",")) {
+            if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+              cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+            } else {
+              cleaned = cleaned.replace(/,/g, "");
+            }
+          } else if (cleaned.includes(",")) {
+            const parts = cleaned.split(",");
+            if (parts[parts.length - 1].length === 2) {
+              cleaned = parts.join(".");
+            } else {
+              cleaned = cleaned.replace(/,/g, "");
+            }
+          } else if (cleaned.includes(".")) {
+            const parts = cleaned.split(".");
+            if (parts[parts.length - 1].length !== 2) {
+              cleaned = parts.join("");
+            }
+          }
+
+          const price = parseFloat(cleaned);
+          return isNaN(price) || price < 1 || price > 50000 ? 0 : price;
         };
       });
 

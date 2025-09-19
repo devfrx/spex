@@ -55,23 +55,7 @@ async function lightweightFetch(url) {
     let rawPrice = offscreenMatch ? offscreenMatch[1].trim() : "0";
 
     // Normalizza prezzo
-    let cleaned = rawPrice.replace(/[^\d.,]/g, "");
-    if (cleaned.includes(".") && cleaned.includes(",")) {
-      if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
-        cleaned = cleaned.replace(/\./g, "").replace(",", ".");
-      } else {
-        cleaned = cleaned.replace(/,/g, "");
-      }
-    } else if (cleaned.includes(",")) {
-      const parts = cleaned.split(",");
-      if (parts[parts.length - 1].length === 2) cleaned = parts.join(".");
-      else cleaned = cleaned.replace(/,/g, "");
-    } else if (cleaned.includes(".")) {
-      const parts = cleaned.split(".");
-      if (parts[parts.length - 1].length !== 2) cleaned = parts.join("");
-    }
-
-    const price = parseFloat(cleaned) || 0;
+    const price = parsePrice(rawPrice);
 
     return {
       title,
@@ -87,10 +71,56 @@ async function lightweightFetch(url) {
 }
 
 /**
+ * Parsing avanzato dei prezzi con validazione
+ */
+function parsePrice(priceText) {
+  if (!priceText) return 0;
+
+  let cleaned = priceText.replace(/[^\d.,]/g, "");
+  if (!cleaned) return 0;
+
+  // Gestione formato misto (punto e virgola)
+  if (cleaned.includes(".") && cleaned.includes(",")) {
+    if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+      // Formato europeo: 1.234,56
+      cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+    } else {
+      // Formato americano: 1,234.56
+      cleaned = cleaned.replace(/,/g, "");
+    }
+  } else if (cleaned.includes(",")) {
+    const parts = cleaned.split(",");
+    if (parts[parts.length - 1].length === 2) {
+      // Probabilmente decimali: 1234,56 -> 1234.56
+      cleaned = parts.join(".");
+    } else {
+      // Probabilmente migliaia: 1,234 -> 1234
+      cleaned = cleaned.replace(/,/g, "");
+    }
+  } else if (cleaned.includes(".")) {
+    const parts = cleaned.split(".");
+    if (parts[parts.length - 1].length !== 2) {
+      // Probabilmente migliaia: 1.234 -> 1234
+      cleaned = parts.join("");
+    }
+  }
+
+  const price = parseFloat(cleaned);
+
+  // Validazione range ragionevole (1€ - 50,000€)
+  if (isNaN(price) || price < 1 || price > 50000) {
+    console.warn(`[PRICE_PARSER] Prezzo sospetto: ${priceText} -> ${price}`);
+    return 0;
+  }
+
+  return price;
+}
+
+/**
  * Utility per aspettare con Promise
  */
 function delay(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 class AmazonScraper {
@@ -121,7 +151,6 @@ class AmazonScraper {
         timeout: 20000,
       });
 
-      // Sostituito page.waitForTimeout con delay personalizzato
       await delay(800);
 
       const productData = await page.evaluate(() => {
@@ -136,6 +165,7 @@ class AmazonScraper {
           return null;
         };
 
+        // Estrazione titolo
         let title =
           pickText([
             "#productTitle",
@@ -144,53 +174,80 @@ class AmazonScraper {
             ".a-size-large",
           ]) || "Prodotto non trovato";
 
-        // Prezzo con selettori migliorati
+        // Estrazione prezzo migliorata con selettori specifici
         const priceSelectors = [
+          // Prezzi principali più specifici per prodotti singoli
+          ".a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen",
+          ".a-price.a-text-price.a-size-medium.a-color-price .a-offscreen",
+          "#priceblock_dealprice",
+          "#priceblock_ourprice",
+          ".a-price.a-price--base .a-offscreen",
+          // Selettori generici come fallback
           ".a-price .a-offscreen",
           "#price_inside_buybox",
           ".a-price-range .a-price .a-offscreen",
           ".a-price-whole",
           '[data-testid="price-current"]',
-          ".a-price-symbol + .a-price-whole",
         ];
-        let priceRaw = pickText(priceSelectors) || "0";
 
-        // Normalizzazione prezzo migliorata
-        let cleaned = priceRaw.replace(/[^\d.,]/g, "");
-        if (cleaned.includes(".") && cleaned.includes(",")) {
-          if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
-            // Formato europeo: 1.234,56
-            cleaned = cleaned.replace(/\./g, "").replace(",", ".");
-          } else {
-            // Formato americano: 1,234.56
-            cleaned = cleaned.replace(/,/g, "");
-          }
-        } else if (cleaned.includes(",")) {
-          const parts = cleaned.split(",");
-          if (parts[parts.length - 1].length === 2) {
-            // Probabilmente decimali: 1234,56 -> 1234.56
-            cleaned = parts.join(".");
-          } else {
-            // Probabilmente migliaia: 1,234 -> 1234
-            cleaned = cleaned.replace(/,/g, "");
-          }
-        } else if (cleaned.includes(".")) {
-          const parts = cleaned.split(".");
-          if (parts[parts.length - 1].length !== 2) {
-            // Probabilmente migliaia: 1.234 -> 1234
-            cleaned = parts.join("");
-          }
+        // Raccoglie tutti i prezzi trovati per debug e validazione
+        const foundPrices = [];
+
+        for (const selector of priceSelectors) {
+          const elements = document.querySelectorAll(selector);
+          elements.forEach((el) => {
+            if (el && el.textContent) {
+              const priceText = el.textContent.trim();
+              const cleaned = priceText.replace(/[^\d.,]/g, "");
+
+              if (cleaned) {
+                const parsed = window.parsePrice
+                  ? window.parsePrice(priceText)
+                  : 0;
+                if (parsed > 0 && parsed < 50000) {
+                  // Filtro prezzi ragionevoli
+                  foundPrices.push({
+                    selector,
+                    text: priceText,
+                    parsed,
+                  });
+                }
+              }
+            }
+          });
         }
 
-        let price = parseFloat(cleaned);
-        if (isNaN(price) || price < 0) price = 0;
+        // Logica di selezione del prezzo migliore
+        let bestPrice = 0;
+        if (foundPrices.length > 0) {
+          // Se ci sono più prezzi simili, prendi il più comune
+          const priceGroups = {};
+          foundPrices.forEach((p) => {
+            const rounded = Math.round(p.parsed);
+            priceGroups[rounded] = (priceGroups[rounded] || 0) + 1;
+          });
 
-        // Estrazione specifiche migliorata
+          const mostCommon = Object.keys(priceGroups).sort(
+            (a, b) => priceGroups[b] - priceGroups[a]
+          )[0];
+
+          bestPrice = parseFloat(mostCommon);
+        }
+
+        // Fallback: parsing diretto se bestPrice è 0
+        if (bestPrice === 0) {
+          const priceRaw = pickText(priceSelectors) || "0";
+          bestPrice = window.parsePrice ? window.parsePrice(priceRaw) : 0;
+        }
+
+        // Estrazione specifiche
         const specs = [];
 
         // Feature bullets
         document
-          .querySelectorAll("#feature-bullets ul li span, .a-unordered-list .a-list-item")
+          .querySelectorAll(
+            "#feature-bullets ul li span, .a-unordered-list .a-list-item"
+          )
           .forEach((b) => {
             const txt = b.innerText?.trim();
             if (
@@ -206,7 +263,9 @@ class AmazonScraper {
 
         // Technical specifications table
         document
-          .querySelectorAll("#productDetails_techSpec_section_1 tr, #productDetails_detailBullets_sections1 tr")
+          .querySelectorAll(
+            "#productDetails_techSpec_section_1 tr, #productDetails_detailBullets_sections1 tr"
+          )
           .forEach((row) => {
             if (specs.length >= 8) return;
             const label = row
@@ -220,7 +279,7 @@ class AmazonScraper {
             }
           });
 
-        // Immagine prodotto con selettori aggiornati
+        // Estrazione immagine
         let imageUrl = "";
         const imageSelectors = [
           "#landingImage",
@@ -236,7 +295,6 @@ class AmazonScraper {
             imageUrl = el.src;
             break;
           }
-          // Prova anche con data-old-hires per immagini ad alta risoluzione
           if (el && el.getAttribute && el.getAttribute("data-old-hires")) {
             imageUrl = el.getAttribute("data-old-hires");
             break;
@@ -245,9 +303,49 @@ class AmazonScraper {
 
         return {
           title,
-          price,
+          price: bestPrice,
           specifications: specs,
           imageUrl,
+          _debug: {
+            foundPrices: foundPrices.map((p) => ({
+              selector: p.selector,
+              text: p.text,
+              parsed: p.parsed,
+            })),
+          },
+        };
+      });
+
+      // Injetta la funzione parsePrice nel context della pagina per debug
+      await page.evaluateOnNewDocument(() => {
+        window.parsePrice = function (priceText) {
+          if (!priceText) return 0;
+
+          let cleaned = priceText.replace(/[^\d.,]/g, "");
+          if (!cleaned) return 0;
+
+          if (cleaned.includes(".") && cleaned.includes(",")) {
+            if (cleaned.lastIndexOf(",") > cleaned.lastIndexOf(".")) {
+              cleaned = cleaned.replace(/\./g, "").replace(",", ".");
+            } else {
+              cleaned = cleaned.replace(/,/g, "");
+            }
+          } else if (cleaned.includes(",")) {
+            const parts = cleaned.split(",");
+            if (parts[parts.length - 1].length === 2) {
+              cleaned = parts.join(".");
+            } else {
+              cleaned = cleaned.replace(/,/g, "");
+            }
+          } else if (cleaned.includes(".")) {
+            const parts = cleaned.split(".");
+            if (parts[parts.length - 1].length !== 2) {
+              cleaned = parts.join("");
+            }
+          }
+
+          const price = parseFloat(cleaned);
+          return isNaN(price) || price < 1 || price > 50000 ? 0 : price;
         };
       });
 
@@ -311,7 +409,7 @@ export default async function handler(req, res) {
     if (!isValidAmazonUrl) {
       return res.status(400).json({
         error: "URL Amazon non valido",
-        received: url
+        received: url,
       });
     }
 
@@ -331,14 +429,18 @@ export default async function handler(req, res) {
     const scraper = new AmazonScraper();
     const productInfo = await scraper.scrapeProduct(url);
 
-    console.log("[SCRAPER] Success:", { title: productInfo.title, price: productInfo.price });
-    res.json(productInfo);
+    console.log("[SCRAPER] Success:", {
+      title: productInfo.title,
+      price: productInfo.price,
+      foundPrices: productInfo._debug?.foundPrices?.length || 0,
+    });
 
+    res.json(productInfo);
   } catch (error) {
     console.error("[SCRAPER] Final error:", error?.message || error);
     res.status(500).json({
       error: "Errore nel recupero dei dati",
-      details: error?.message || "Unknown error"
+      details: error?.message || "Unknown error",
     });
   }
 }

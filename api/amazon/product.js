@@ -209,6 +209,23 @@ class AmazonScraper {
 
         // Selettori aggiornati per prezzi scontati e offerte
         const priceSelectors = [
+          // Selettori specifici per prodotti con sconti pesanti
+          ".a-price-deal .a-offscreen",
+          ".a-price-strike .a-offscreen",
+          ".a-price-savings .a-offscreen",
+          ".apexPriceToPay .a-offscreen",
+          ".a-price-to-pay .a-offscreen",
+
+          // Selettori per layout di offerte speciali
+          '[data-cy="price-recipe"] .a-offscreen',
+          ".reinventPriceAccordionHeaderPillDivider + .a-price .a-offscreen",
+
+          // Prezzi scontati (più priorità) - esistenti
+          ".a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen",
+          ".a-price.a-text-price.a-size-medium.a-color-price .a-offscreen",
+          ".a-price.a-text-normal .a-offscreen",
+          ".a-price-current .a-offscreen",
+
           // Prezzi scontati (più priorità)
           ".a-price.a-text-price.a-size-medium.apexPriceToPay .a-offscreen",
           ".a-price.a-text-price.a-size-medium.a-color-price .a-offscreen",
@@ -279,7 +296,9 @@ class AmazonScraper {
 
           // Fallback: cerca qualsiasi testo che assomiglia a un prezzo
           const allText = document.body.innerText || "";
-          const priceMatches = allText.match(/€\s*[\d.,]+|[\d.,]+\s*€/g);
+          const priceMatches = allText.match(
+            /€\s*[\d]{1,4}[.,][\d]{2}|[\d]{1,4}[.,][\d]{2}\s*€|€\s*[\d]{2,4}(?=[^\d])|[\d]{2,4}(?=\s*€)/g
+          );
 
           if (priceMatches) {
             console.log(
@@ -288,8 +307,8 @@ class AmazonScraper {
             );
             for (const match of priceMatches) {
               const parsed = window.parsePrice ? window.parsePrice(match) : 0;
-              if (parsed > 50 && parsed < 5000) {
-                // Range più ragionevole per CPU
+              // Range più specifico per CPU premium
+              if (parsed > 100 && parsed < 2000) {
                 bestPrice = parsed;
                 foundPrices.push({
                   selector: "fallback-text-search",
